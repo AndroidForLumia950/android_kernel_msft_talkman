@@ -62,6 +62,10 @@ extern void printascii(char *);
 #define MINIMUM_CONSOLE_LOGLEVEL 1 /* Minimum loglevel we let people use */
 #define DEFAULT_CONSOLE_LOGLEVEL 7 /* anything MORE serious than KERN_DEBUG */
 
+#ifdef CONFIG_DEBUG_LL
+extern void printascii(char *);
+#endif
+
 int console_printk[4] = {
 	DEFAULT_CONSOLE_LOGLEVEL,	/* console_loglevel */
 	DEFAULT_MESSAGE_LOGLEVEL,	/* default_message_loglevel */
@@ -1844,6 +1848,10 @@ asmlinkage int vprintk_emit(int facility, int level,
 	 * prefix which might be passed-in as a parameter.
 	 */
 	text_len = vscnprintf(text, sizeof(textbuf), fmt, args);
+
+#ifdef	CONFIG_DEBUG_LL
+	printascii(text);
+#endif
 
 	/* mark and strip a trailing newline */
 	if (text_len && text[text_len-1] == '\n') {
