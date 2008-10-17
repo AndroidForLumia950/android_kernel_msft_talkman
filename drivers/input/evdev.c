@@ -302,7 +302,18 @@ static int evdev_release(struct inode *inode, struct file *file)
 	if (client->use_wake_lock)
 		wake_lock_destroy(&client->wake_lock);
 
+<<<<<<< HEAD
 	kvfree(client);
+=======
+	if (client->use_wake_lock)
+		wake_lock_destroy(&client->wake_lock);
+
+	if (is_vmalloc_addr(client))
+		vfree(client);
+	else
+		kfree(client);
+	kfree(client);
+>>>>>>> fd10c981e1b3 (Input: evdev - Add ioctl to block suspend while event queue is not empty.)
 
 	evdev_close_device(evdev);
 
@@ -720,6 +731,35 @@ static int evdev_disable_suspend_block(struct evdev *evdev,
 	client->use_wake_lock = false;
 	spin_unlock_irq(&client->buffer_lock);
 	wake_lock_destroy(&client->wake_lock);
+
+	return 0;
+}
+
+static int evdev_enable_suspend_block(struct evdev *evdev,
+				      struct evdev_client *client)
+{
+	if (client->use_wake_lock)
+		return 0;
+
+	spin_lock_irq(&client->buffer_lock);
+	wake_lock_init(&client->wake_lock, WAKE_LOCK_SUSPEND, client->name);
+	client->use_wake_lock = true;
+	if (client->packet_head != client->tail)
+		wake_lock(&client->wake_lock);
+	spin_unlock_irq(&client->buffer_lock);
+	return 0;
+}
+
+static int evdev_disable_suspend_block(struct evdev *evdev,
+				       struct evdev_client *client)
+{
+	if (!client->use_wake_lock)
+		return 0;
+
+	spin_lock_irq(&client->buffer_lock);
+	client->use_wake_lock = false;
+	wake_lock_destroy(&client->wake_lock);
+	spin_unlock_irq(&client->buffer_lock);
 
 	return 0;
 }
