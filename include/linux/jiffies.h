@@ -281,7 +281,7 @@ extern unsigned int jiffies_to_usecs(const unsigned long j);
 
 static inline u64 jiffies_to_nsecs(const unsigned long j)
 {
-        return (u64)jiffies_to_usecs(j) * NSEC_PER_USEC;
+	return (u64)jiffies_to_usecs(j) * NSEC_PER_USEC;
 }
 
 extern unsigned long msecs_to_jiffies(const unsigned int m);
