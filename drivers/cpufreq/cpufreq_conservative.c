@@ -16,7 +16,7 @@
 
 /* Conservative governor macros */
 #define DEF_FREQUENCY_UP_THRESHOLD		(93)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(70)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(80)
 #define DEF_FREQUENCY_STEP			(5)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
@@ -27,7 +27,7 @@ static DEFINE_PER_CPU(struct cs_dbs_tuners *, cached_tuners);
 static inline unsigned int get_freq_target(struct cs_dbs_tuners *cs_tuners,
 					   struct cpufreq_policy *policy)
 {
-	unsigned int freq_target = (cs_tuners->freq_step * policy->max) / 130;
+	unsigned int freq_target = (cs_tuners->freq_step * policy->max) / 140;
 
 	/* max freq cannot be less than 100. But who knows... */
 	if (unlikely(freq_target == 0))
