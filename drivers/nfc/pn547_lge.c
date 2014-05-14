@@ -427,7 +427,7 @@ static long pn547_dev_unlocked_ioctl(struct file *filp, unsigned int cmd, unsign
                 spin_unlock_irqrestore(&pn547_dev->irq_enabled_lock, flags);
             }
             else {
-                pr_err("%s NFC is alread On!\n", __func__);
+                pr_err("%s NFC is already On!\n", __func__);
             }
         } else  if (arg == 0) {
             /* power off */
@@ -465,7 +465,7 @@ static long pn547_dev_unlocked_ioctl(struct file *filp, unsigned int cmd, unsign
                 spin_unlock_irqrestore(&pn547_dev->irq_enabled_lock, flags);
             }
             else {
-                pr_err("%s NFC is already Off!\n", __func__);
+                pr_debug("%s NFC is already Off!\n", __func__);
             }
         } else {
                 pr_err("%s bad arg %ld\n", __func__, arg);
