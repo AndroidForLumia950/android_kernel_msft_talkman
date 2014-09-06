@@ -23,6 +23,7 @@
 #include <linux/of_gpio.h>
 #include <linux/regmap.h>
 #include <linux/delay.h>
+#include <linux/device.h>
 
 #ifdef DW8768_DEBUG
 #define dw_info(...)	pr_info(__VA_ARGS__)
