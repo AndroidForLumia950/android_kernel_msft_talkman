@@ -97,7 +97,7 @@
 			/* set_display_off */
 			05 01 00 00 21 00 02 28 00
 			/* set_idle_on */
-       		05 01 00 00 00 00 02 10 00
+       		00 24 0A 0A 26 25 09
 			];
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-pan-physical-width-dimension = <65>;
@@ -186,7 +186,7 @@
 			/* set_display_off */
 			05 01 00 00 21 00 02 28 00
 			/* set_idle_on */
-       		05 01 00 00 00 00 02 10 00
+       		00 24 0A 0A 26 25 09
 			];
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-pan-physical-width-dimension = <65>;

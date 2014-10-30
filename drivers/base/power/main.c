@@ -16,7 +16,7 @@
  * domain dependencies may differ from the ancestral dependencies that the
  * subsystem list maintains.
  */
-
+#include <linux/pm.h>
 #include <linux/device.h>
 #include <linux/kallsyms.h>
 #include <linux/export.h>
@@ -599,8 +599,9 @@ static void dpm_resume_early(pm_message_t state)
 	ktime_t starttime = ktime_get();
 
 #ifdef CONFIG_BOEFFLA_WL_BLOCKER
-	pm_print_active_wakeup_sources();
+#define pm_print_active_wakeup_sources(); // Ensure this is defined
 #endif
+
 
 	mutex_lock(&dpm_list_mtx);
 	while (!list_empty(&dpm_late_early_list)) {
