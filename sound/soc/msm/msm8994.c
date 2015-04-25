@@ -3571,6 +3571,12 @@ static int msm8994_asoc_machine_probe(struct platform_device *pdev)
 		goto err;
 	}
 
+	mbhc_cfg.gpio_level_insert = of_property_read_bool(
+					pdev->dev.of_node,
+					"qcom,headset-jack-type-NC");
+	dev_dbg(&pdev->dev, "gpio_level_insert (%d)\n",
+		mbhc_cfg.gpio_level_insert);
+
 	ret = msm8994_prepare_codec_mclk(card);
 	if (ret) {
 		dev_err(&pdev->dev, "prepare_codec_mclk failed, err:%d\n",
