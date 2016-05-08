@@ -1,6 +1,4 @@
-/*
- * cpuidle.c - core cpuidle infrastructure
- *
+/* * cpuidle.c - core cpuidle infrastructure *
  * (C) 2006-2007 Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>
  *               Shaohua Li <shaohua.li@intel.com>
  *               Adam Belay <abelay@novell.com>
@@ -19,7 +17,7 @@
 #include <linux/ktime.h>
 #include <linux/hrtimer.h>
 #include <linux/module.h>
-
+#include <linux/atomic.h>
 #include "cpuidle.h"
 
 DEFINE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
