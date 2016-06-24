@@ -1429,7 +1429,8 @@ void ufs_qcom_print_hw_debug_reg_all(struct ufs_hba *hba, void *priv,
 	print_fn(hba, UFS_UFS_DBG_RD_PRDT_RAM, 64,
 			"UFS_UFS_DBG_RD_PRDT_RAM ", priv);
 
-	ufshcd_writel(hba, (reg & ~UFS_BIT(17)), REG_UFS_CFG1);
+	/* clear bit 17 - UTP_DBG_RAMS_EN */
+	ufshcd_rmwl(hba, UFS_BIT(17), 0, REG_UFS_CFG1);
 
 	print_fn(hba, UFS_DBG_RD_REG_UAWM, 4,
 			"UFS_DBG_RD_REG_UAWM ", priv);
