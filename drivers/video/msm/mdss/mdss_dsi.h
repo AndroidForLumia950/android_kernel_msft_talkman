@@ -298,6 +298,8 @@ enum {
 #define DSI_EV_STOP_HS_CLK_LANE		0x40000000
 #define DSI_EV_MDP_BUSY_RELEASE		0x80000000
 
+#define DISPLAY_LOW_PERSISTENCE_MASK    1
+
 struct mdss_dsi_ctrl_pdata {
 	int ndx;	/* panel_num */
 	int (*on) (struct mdss_panel_data *pdata);
@@ -372,8 +374,9 @@ struct mdss_dsi_ctrl_pdata {
 	struct dsi_panel_cmds on_cmds;
 	struct dsi_panel_cmds post_dms_on_cmds;
 	struct dsi_panel_cmds off_cmds;
+	struct dsi_panel_cmds lp_on_cmds;
+	struct dsi_panel_cmds lp_off_cmds;
 	struct dsi_panel_cmds status_cmds;
-	struct dsi_panel_cmds gamma_cmds;
 	u32 status_cmds_rlen;
 	u32 *status_value;
 	u32 status_error_count;
@@ -421,18 +424,14 @@ struct mdss_dsi_ctrl_pdata {
 	struct panel_horizontal_idle *line_idle;
 	struct mdss_util_intf *mdss_util;
 
-	bool dsvreg_pre_on;
-	bool dsvreg_pre_off;
-	struct regulator *dsvreg;
 	bool dfps_status;	/* dynamic refresh status */
-	struct platform_device *pdev;
+	atomic_t clkrate_change_pending;
 };
 
 struct dsi_status_data {
 	struct notifier_block fb_notifier;
 	struct delayed_work check_status;
 	struct msm_fb_data_type *mfd;
-	struct work_struct irq_done;
 };
 
 int dsi_panel_device_register(struct device_node *pan_node,
@@ -468,6 +467,9 @@ void mdss_dsi_irq_handler_config(struct mdss_dsi_ctrl_pdata *ctrl_pdata);
 void mdss_dsi_set_tx_power_mode(int mode, struct mdss_panel_data *pdata);
 int mdss_dsi_clk_div_config(struct mdss_panel_info *panel_info,
 			    int frame_rate);
+int mdss_dsi_clk_refresh(struct mdss_panel_data *pdata);
+int mdss_dsi_link_clk_start(struct mdss_dsi_ctrl_pdata *ctrl);
+void mdss_dsi_link_clk_stop(struct mdss_dsi_ctrl_pdata *ctrl);
 int mdss_dsi_clk_init(struct platform_device *pdev,
 		      struct mdss_dsi_ctrl_pdata *ctrl_pdata);
 int mdss_dsi_shadow_clk_init(struct platform_device *pdev,
@@ -510,8 +512,6 @@ int mdss_panel_get_dst_fmt(u32 bpp, char mipi_mode, u32 pixel_packing,
 
 int mdss_dsi_register_recovery_handler(struct mdss_dsi_ctrl_pdata *ctrl,
 		struct mdss_intf_recovery *recovery);
-int mdss_dsi_panel_color_temp(struct device_node *pan_node,
-		struct mdss_dsi_ctrl_pdata *ctrl, int color_temp);
 
 static inline const char *__mdss_dsi_pm_name(enum dsi_pm_type module)
 {

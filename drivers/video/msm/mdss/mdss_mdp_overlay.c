@@ -1957,6 +1957,7 @@ int mdss_mdp_overlay_kickoff(struct msm_fb_data_type *mfd,
 
 	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_ON);
 
+	__vsync_set_vsync_handler(mfd);
 	__validate_and_set_roi(mfd, data);
 
 	if (ctl->ops.wait_pingpong && mdp5_data->mdata->serialize_wait4pp)
@@ -1994,7 +1995,6 @@ int mdss_mdp_overlay_kickoff(struct msm_fb_data_type *mfd,
 			&commit_cb);
 		ATRACE_END("display_commit");
 	}
-	__vsync_set_vsync_handler(mfd);
 
 	if (!mdp5_data->kickoff_released)
 		mdss_mdp_ctl_notify(ctl, MDP_NOTIFY_FRAME_CTX_DONE);
@@ -2597,28 +2597,18 @@ static void mdss_mdp_overlay_handle_vsync(struct mdss_mdp_ctl *ctl,
 
 int mdss_mdp_overlay_vsync_ctrl(struct msm_fb_data_type *mfd, int en)
 {
-	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
 	struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
 	int rc;
 
 	if (!ctl)
 		return -ENODEV;
-
-	mutex_lock(&mdp5_data->ov_lock);
-	if (!ctl->ops.add_vsync_handler || !ctl->ops.remove_vsync_handler) {
-		rc = -EOPNOTSUPP;
-		pr_err_once("fb%d vsync handlers are not registered\n",
-			mfd->index);
-		goto end;
-	}
-
+	if (!ctl->ops.add_vsync_handler || !ctl->ops.remove_vsync_handler)
+		return -EOPNOTSUPP;
 	if (!ctl->panel_data->panel_info.cont_splash_enabled
-		&& (!mdss_mdp_ctl_is_power_on(ctl) ||
-		mdss_panel_is_power_on_ulp(ctl->power_state))) {
-		pr_debug("fb%d vsync pending first update en=%d, ctl power state:%d\n",
-				mfd->index, en, ctl->power_state);
-		rc = -EPERM;
-		goto end;
+			&& !mdss_mdp_ctl_is_power_on(ctl)) {
+		pr_debug("fb%d vsync pending first update en=%d\n",
+				mfd->index, en);
+		return -EPERM;
 	}
 
 	pr_debug("fb%d vsync en=%d\n", mfd->index, en);
@@ -2630,8 +2620,6 @@ int mdss_mdp_overlay_vsync_ctrl(struct msm_fb_data_type *mfd, int en)
 		rc = ctl->ops.remove_vsync_handler(ctl, &ctl->vsync_handler);
 	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF);
 
-end:
-	mutex_unlock(&mdp5_data->ov_lock);
 	return rc;
 }
 
@@ -2730,6 +2718,95 @@ static struct attribute *dynamic_fps_fs_attrs[] = {
 };
 static struct attribute_group dynamic_fps_fs_attrs_group = {
 	.attrs = dynamic_fps_fs_attrs,
+};
+
+static ssize_t dynamic_dsitiming_sysfs_rda(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	ssize_t ret;
+	struct mdss_panel_data *pdata;
+	struct fb_info *fbi = dev_get_drvdata(dev);
+	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
+	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
+
+	if (!mdp5_data->ctl || !mdss_mdp_ctl_is_power_on(mdp5_data->ctl))
+		return 0;
+
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if (!pdata) {
+		pr_err("%s: no panel connected for fb%d\n", __func__, mfd->index);
+		return -ENODEV;
+	}
+
+	mutex_lock(&mdp5_data->dynamic_dsitiming_lock);
+	ret = snprintf(buf, PAGE_SIZE, "%d\n",
+			pdata->panel_info.cached_clk_rate);
+	pr_debug("%s: read dsi clk rate'%d'\n", __func__,
+			pdata->panel_info.cached_clk_rate);
+	mutex_unlock(&mdp5_data->dynamic_dsitiming_lock);
+	return ret;
+}
+
+static ssize_t dynamic_dsitiming_sysfs_wta(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	int bitclk, rc = 0;
+	struct mdss_panel_data *pdata;
+	struct fb_info *fbi = dev_get_drvdata(dev);
+	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
+	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
+
+	rc = kstrtoint(buf, 10, &bitclk);
+	if (rc) {
+		pr_err("%s: kstrtoint failed. rc=%d\n", __func__, rc);
+		return rc;
+	}
+
+	if (!mdp5_data->ctl || !mdss_mdp_ctl_is_power_on(mdp5_data->ctl)) {
+		pr_err("%s: no ctl or ctl is off\n",__func__);
+		return -ENODEV;
+	}
+
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if (!pdata) {
+		pr_err("%s: no panel connected for fb%d\n", __func__, mfd->index);
+		return -ENODEV;
+	}
+
+	if (bitclk == pdata->panel_info.clk_rate) {
+		pr_err("%s: dsi bit clk  is already %d\n",
+			__func__, bitclk);
+		return count;
+	}
+	pr_debug("%s: dsi timing info: bitclk=%d\n", __func__, bitclk);
+
+	mutex_lock(&mdp5_data->dynamic_dsitiming_lock);
+
+	pdata->panel_info.cached_clk_rate = pdata->panel_info.clk_rate;
+
+	rc = mdss_mdp_ctl_update_dsitiming(mdp5_data->ctl, bitclk);
+	if (!rc) {
+		pr_debug("%s: bit clk rate configured to '%d' \n", __func__, bitclk);
+	} else {
+		pr_err("%s: Failed to configure '%d' . rc = %d\n", __func__,
+			bitclk, rc);
+		mutex_unlock(&mdp5_data->dynamic_dsitiming_lock);
+		return rc;
+	}
+	mutex_unlock(&mdp5_data->dynamic_dsitiming_lock);
+
+	return count;
+}
+
+static DEVICE_ATTR(dynamic_dsitiming, S_IRUGO | S_IWUSR  | S_IWGRP, dynamic_dsitiming_sysfs_rda,
+	dynamic_dsitiming_sysfs_wta);
+
+static struct attribute *dynamic_dsitiming_fs_attrs[] = {
+	&dev_attr_dynamic_dsitiming.attr,
+	NULL,
+};
+static struct attribute_group dynamic_dsitiming_fs_attrs_group = {
+	.attrs = dynamic_dsitiming_fs_attrs,
 };
 
 static ssize_t mdss_mdp_vsync_show_event(struct device *dev,
@@ -2960,55 +3037,6 @@ static ssize_t mdss_mdp_cmd_autorefresh_store(struct device *dev,
 	return len;
 }
 
-static ssize_t mdss_mdp_colortemp_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	ssize_t ret;
-	struct mdss_panel_data *pdata;
-
-	pdata = dev_get_platdata(&mfd->pdev->dev);
-	if (!pdata) {
-		pr_err("no panel connected for fb%d\n", mfd->index);
-		return -ENODEV;
-	}
-
-	ret = snprintf(buf, PAGE_SIZE, "%d\n",
-		pdata->panel_info.color_temp);
-
-	return ret;
-}
-
-static ssize_t mdss_mdp_colortemp_store(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	int ret;
-	struct mdss_panel_data *pdata;
-	struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
-	int colortemp = 0;
-
-	pdata = dev_get_platdata(&mfd->pdev->dev);
-	if (!pdata) {
-		pr_err("no panel connected for fb%d\n", mfd->index);
-		return -ENODEV;
-	}
-
-	ret = kstrtoint(buf, 10, &colortemp);
-	if (ret) {
-		pr_err("kstrtoint failed. ret=%d\n", ret);
-		return ret;
-	}
-	if (pdata->panel_info.color_temp == colortemp) {
-		pr_info("Color temp is already %d\n", colortemp);
-		return count;
-	}
-	mdss_mdp_ctl_intf_event(ctl,
-		MDSS_EVENT_DSI_PANEL_COLOR_TEMP, (void *)(long)colortemp);
-	return count;
-}
 
 static DEVICE_ATTR(msm_cmd_autorefresh_en, S_IRUGO | S_IWUSR,
 	mdss_mdp_cmd_autorefresh_show, mdss_mdp_cmd_autorefresh_store);
@@ -3017,15 +3045,12 @@ static DEVICE_ATTR(ad, S_IRUGO | S_IWUSR | S_IWGRP, mdss_mdp_ad_show,
 	mdss_mdp_ad_store);
 static DEVICE_ATTR(dyn_pu, S_IRUGO | S_IWUSR | S_IWGRP, mdss_mdp_dyn_pu_show,
 	mdss_mdp_dyn_pu_store);
-static DEVICE_ATTR(color_temp, S_IRUGO | S_IWUSR, mdss_mdp_colortemp_show,
-	mdss_mdp_colortemp_store);
 
 static struct attribute *mdp_overlay_sysfs_attrs[] = {
 	&dev_attr_vsync_event.attr,
 	&dev_attr_ad.attr,
 	&dev_attr_dyn_pu.attr,
 	&dev_attr_msm_cmd_autorefresh_en.attr,
-	&dev_attr_color_temp.attr,
 	NULL,
 };
 
@@ -4893,7 +4918,7 @@ static int __vsync_retire_setup(struct msm_fb_data_type *mfd)
 {
 	struct mdss_overlay_private *mdp5_data = mfd_to_mdp5_data(mfd);
 	char name[24];
-	struct sched_param param = { .sched_priority = 9 };
+	struct sched_param param = { .sched_priority = 5 };
 
 	snprintf(name, sizeof(name), "mdss_fb%d_retire", mfd->index);
 	mdp5_data->vsync_timeline = sw_sync_timeline_create(name);
@@ -5012,6 +5037,7 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 	mutex_init(&mdp5_data->list_lock);
 	mutex_init(&mdp5_data->ov_lock);
 	mutex_init(&mdp5_data->dfps_lock);
+	mutex_init(&mdp5_data->dynamic_dsitiming_lock);
 	mdp5_data->hw_refresh = true;
 	mdp5_data->overlay_play_enable = true;
 	mdp5_data->cursor_ndx[CURSOR_PIPE_LEFT] = MSMFB_NEW_REQUEST;
@@ -5069,6 +5095,15 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 			&dynamic_fps_fs_attrs_group);
 		if (rc) {
 			pr_err("Error dfps sysfs creation ret=%d\n", rc);
+			goto init_fail;
+		}
+	}
+
+	if (mfd->panel_info->type == MIPI_CMD_PANEL) {
+		rc = sysfs_create_group(&dev->kobj,
+			&dynamic_dsitiming_fs_attrs_group);
+		if (rc) {
+			pr_err("Error dsi bit clk sysfs creation ret=%d\n", rc);
 			goto init_fail;
 		}
 	}

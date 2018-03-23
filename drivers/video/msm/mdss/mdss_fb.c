@@ -2,7 +2,7 @@
  * Core MDSS framebuffer driver.
  *
  * Copyright (C) 2007 Google Incorporated
- * Copyright (c) 2008-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2008-2016, The Linux Foundation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -55,8 +55,6 @@
 #define CREATE_TRACE_POINTS
 #include "mdss_debug.h"
 
-#include "mdss_livedisplay.h"
-
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
 #define MDSS_FB_NUM 3
 #else
@@ -72,15 +70,10 @@
 #define BLANK_FLAG_LP	FB_BLANK_VSYNC_SUSPEND
 #define BLANK_FLAG_ULP	FB_BLANK_NORMAL
 
-#define MDSS_BRIGHT_TO_BL_DIMMER(out, v) do {\
-					out = ((v) * (v) * 255  / 4095 + (v) * (255 - (v)) / 32);\
-					} while (0)
-
-bool backlight_dimmer = false;
-module_param(backlight_dimmer, bool, 0755);
-
 static struct fb_info *fbi_list[MAX_FBI_LIST];
 static int fbi_list_index;
+static bool fb_need_set_brightness = false;
+static bool charger_mode = false;
 
 static u32 mdss_fb_pseudo_palette[16] = {
 	0x00000000, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -264,14 +257,10 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 	if (value > mfd->panel_info->brightness_max)
 		value = mfd->panel_info->brightness_max;
 
-	if (backlight_dimmer) {
-		MDSS_BRIGHT_TO_BL_DIMMER(bl_lvl, value);
-	} else {
-		/* This maps android backlight level 0 to 255 into
-		   driver backlight level 0 to bl_max with rounding */
-		MDSS_BRIGHT_TO_BL(bl_lvl, value, mfd->panel_info->bl_max,
-					mfd->panel_info->brightness_max);
-	}
+	/* This maps android backlight level 0 to 255 into
+	   driver backlight level 0 to bl_max with rounding */
+	MDSS_BRIGHT_TO_BL(bl_lvl, value, mfd->panel_info->bl_max,
+				mfd->panel_info->brightness_max);
 
 	if (!bl_lvl && value)
 		bl_lvl = 1;
@@ -803,8 +792,7 @@ static int mdss_fb_create_sysfs(struct msm_fb_data_type *mfd)
 	rc = sysfs_create_group(&mfd->fbi->dev->kobj, &mdss_fb_attr_group);
 	if (rc)
 		pr_err("sysfs group creation failed, rc=%d\n", rc);
-
-	return mdss_livedisplay_create_sysfs(mfd);
+	return rc;
 }
 
 static void mdss_fb_remove_sysfs(struct msm_fb_data_type *mfd)
@@ -883,6 +871,14 @@ static int mdss_fb_probe(struct platform_device *pdev)
 	if (rc) {
 		led_trigger_register_simple("boot-indication",
 			&(mfd->boot_notification_led));
+	}
+
+	rc = of_property_read_bool(pdev->dev.of_node,
+		"huawei,set-brightness-enabled");
+
+	if(rc) {
+		pr_info("set brightness enabled\n");
+		fb_need_set_brightness = true;
 	}
 
 	INIT_LIST_HEAD(&mfd->proc_list);
@@ -1347,10 +1343,9 @@ static void mdss_fb_stop_disp_thread(struct msm_fb_data_type *mfd)
 {
 	pr_debug("%pS: stop display thread fb%d\n",
 		__builtin_return_address(0), mfd->index);
-	mutex_lock(&mfd->mdp_sync_pt_data.sync_mutex);
+
 	kthread_stop(mfd->disp_thread);
 	mfd->disp_thread = NULL;
-	mutex_unlock(&mfd->mdp_sync_pt_data.sync_mutex);
 }
 
 static void mdss_panel_validate_debugfs_info(struct msm_fb_data_type *mfd)
@@ -1517,6 +1512,7 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 	int ret = 0;
 	int cur_power_state, req_power_state = MDSS_PANEL_POWER_OFF;
 	char trace_buffer[32];
+	struct mdss_panel_data *pdata = NULL;
 
 	if (!mfd || !op_enable)
 		return -EPERM;
@@ -1558,6 +1554,15 @@ static int mdss_fb_blank_sub(int blank_mode, struct fb_info *info,
 	case FB_BLANK_UNBLANK:
 		pr_debug("unblank called. cur pwr state=%d\n", cur_power_state);
 		ret = mdss_fb_blank_unblank(mfd);
+		if(fb_need_set_brightness && charger_mode) {
+			pdata = dev_get_platdata(&mfd->pdev->dev);
+			if(NULL != pdata && NULL != pdata->set_backlight) {
+				mutex_lock(&mfd->bl_lock);
+				pr_info("set backlight on\n");
+				pdata->set_backlight(pdata, 100);
+				mutex_unlock(&mfd->bl_lock);
+			}
+		}
 		break;
 	case BLANK_FLAG_ULP:
 		req_power_state = MDSS_PANEL_POWER_LP2;
@@ -2897,12 +2902,10 @@ static int mdss_fb_pan_display_ex(struct fb_info *info,
 	mfd->msm_fb_backup.info = *info;
 	mfd->msm_fb_backup.disp_commit = *disp_commit;
 
-	if (mfd->disp_thread) {
-		atomic_inc(&mfd->mdp_sync_pt_data.commit_cnt);
-		atomic_inc(&mfd->commits_pending);
-		atomic_inc(&mfd->kickoff_pending);
-		wake_up_all(&mfd->commit_wait_q);
-	}
+	atomic_inc(&mfd->mdp_sync_pt_data.commit_cnt);
+	atomic_inc(&mfd->commits_pending);
+	atomic_inc(&mfd->kickoff_pending);
+	wake_up_all(&mfd->commit_wait_q);
 	mutex_unlock(&mfd->mdp_sync_pt_data.sync_mutex);
 	if (wait_for_finish) {
 		ret = mdss_fb_pan_idle(mfd);
@@ -3084,7 +3087,7 @@ static int __mdss_fb_display_thread(void *data)
 				mfd->index);
 
 	while (1) {
-		wait_event_interruptible(mfd->commit_wait_q,
+		wait_event(mfd->commit_wait_q,
 				(atomic_read(&mfd->commits_pending) ||
 				 kthread_should_stop()));
 
@@ -3099,8 +3102,8 @@ static int __mdss_fb_display_thread(void *data)
 		wake_up_all(&mfd->idle_wait_q);
 	}
 
+	mdss_fb_release_kickoff(mfd);
 	atomic_set(&mfd->commits_pending, 0);
-	atomic_set(&mfd->kickoff_pending, 0);
 	wake_up_all(&mfd->idle_wait_q);
 
 	return ret;
@@ -3682,6 +3685,28 @@ static int mdss_fb_mode_switch(struct msm_fb_data_type *mfd, u32 mode)
 	return ret;
 }
 
+
+static int mdss_fb_set_persistence_mode(struct msm_fb_data_type *mfd, u32 mode)
+{
+	struct mdss_panel_info *pinfo = NULL;
+	struct mdss_panel_data *pdata;
+	int ret = 0;
+
+	if (!mfd || !mfd->panel_info)
+		return -EINVAL;
+
+	pinfo = mfd->panel_info;
+
+	mutex_lock(&mfd->bl_lock);
+	pdata = dev_get_platdata(&mfd->pdev->dev);
+	if ((pdata) && (pdata->apply_display_setting)) {
+		ret = pdata->apply_display_setting(pdata, mode);
+	}
+	mutex_unlock(&mfd->bl_lock);
+
+	return ret;
+}
+
 static int __ioctl_wait_idle(struct msm_fb_data_type *mfd, u32 cmd)
 {
 	int ret = 0;
@@ -3703,7 +3728,8 @@ static int __ioctl_wait_idle(struct msm_fb_data_type *mfd, u32 cmd)
 		(cmd != MSMFB_HISTOGRAM_START) &&
 		(cmd != MSMFB_HISTOGRAM_STOP) &&
 		(cmd != MSMFB_HISTOGRAM) &&
-		(cmd != MSMFB_OVERLAY_PREPARE)) {
+		(cmd != MSMFB_OVERLAY_PREPARE) &&
+		(cmd != MSMFB_SET_PERSISTENCE_MODE)) {
 		ret = mdss_fb_pan_idle(mfd);
 	}
 
@@ -3759,6 +3785,7 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 	struct mdp_buf_sync buf_sync;
 	struct msm_sync_pt_data *sync_pt_data = NULL;
 	unsigned int dsi_mode = 0;
+	unsigned int persistence_mode = 0;
 	struct mdss_panel_data *pdata = NULL;
 
 	if (!info || !info->par)
@@ -3841,7 +3868,14 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 
 		ret = mdss_fb_mode_switch(mfd, dsi_mode);
 		break;
-
+	case MSMFB_SET_PERSISTENCE_MODE:
+		ret = copy_from_user(&persistence_mode, argp, sizeof(persistence_mode));
+		if (ret) {
+			pr_err("%s: MSMFB_SET_PERSISTENCE_MODE ioctl failed\n", __func__);
+			goto exit;
+		}
+		ret = mdss_fb_set_persistence_mode(mfd, persistence_mode);
+		break;
 	default:
 		if (mfd->mdp.ioctl_handler)
 			ret = mfd->mdp.ioctl_handler(mfd, cmd, argp);
@@ -4060,3 +4094,22 @@ void mdss_fb_report_panel_dead(struct msm_fb_data_type *mfd)
 	pr_err("Panel has gone bad, sending uevent - %s\n", envp[0]);
 	return;
 }
+
+static int __init early_parse_boot_mode(char *arg)
+{
+	int len = 0;
+
+	if (arg) {
+		len = strlen(arg);
+		if(!strcmp(arg,"charger")) {
+			charger_mode = true;
+			pr_debug("%s: charger mode\n", __func__);
+		} else {
+			charger_mode = false;
+			pr_debug("%s: not charger mode\n", __func__);
+		}
+	}
+	return 0;
+}
+early_param("androidboot.mode", early_parse_boot_mode);
+

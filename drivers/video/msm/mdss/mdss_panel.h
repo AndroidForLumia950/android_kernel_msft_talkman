@@ -221,7 +221,7 @@ enum mdss_intf_events {
 	MDSS_EVENT_DSI_DYNAMIC_SWITCH,
 	MDSS_EVENT_DSI_RECONFIG_CMD,
 	MDSS_EVENT_DSI_RESET_WRITE_PTR,
-	MDSS_EVENT_DSI_PANEL_COLOR_TEMP,
+	MDSS_EVENT_PANEL_UPDATE_DSI_TIMING,
 };
 
 struct lcd_panel_info {
@@ -382,8 +382,6 @@ struct mdss_mdp_pp_tear_check {
 	u32 refx100;
 };
 
-struct mdss_livedisplay_ctx;
-
 struct mdss_panel_info {
 	u32 xres;
 	u32 yres;
@@ -411,6 +409,8 @@ struct mdss_panel_info {
 	int pwm_lpg_chan;
 	int pwm_period;
 	bool dynamic_fps;
+	bool dynamic_dsitiming;
+	u32  cached_clk_rate;
 	bool ulps_feature_enabled;
 	bool ulps_suspend_enabled;
 	bool panel_ack_disabled;
@@ -457,17 +457,14 @@ struct mdss_panel_info {
 	struct lvds_panel_info lvds;
 	struct edp_panel_info edp;
 
-	struct mdss_livedisplay_ctx *livedisplay;
-
 	/* debugfs structure for the panel */
 	struct mdss_panel_debugfs_info *debugfs_info;
-
-	int color_temp;
 };
 
 struct mdss_panel_data {
 	struct mdss_panel_info panel_info;
 	void (*set_backlight) (struct mdss_panel_data *pdata, u32 bl_level);
+	int (*apply_display_setting) (struct mdss_panel_data *pdata, u32 mode);
 	unsigned char *mmss_cc_base;
 
 	/**
@@ -496,13 +493,6 @@ struct mdss_panel_debugfs_info {
 	u32 override_flag;
 	char frame_rate;
 	struct mdss_panel_debugfs_info *next;
-};
-
-
-/* color temperature */
-enum {
-	PANEL_COLORTEMP_DEFAULT = 0,
-	PANEL_COLORTEMP_BLUISH,
 };
 
 /**

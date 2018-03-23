@@ -2634,11 +2634,9 @@ int mdss_mdp_ctl_start(struct mdss_mdp_ctl *ctl, bool handoff)
 		return 0;
 	}
 
-	if (mdss_mdp_ctl_is_power_off(ctl)) {
-		ret = mdss_mdp_ctl_setup(ctl);
-		if (ret)
-			return ret;
-	}
+	ret = mdss_mdp_ctl_setup(ctl);
+	if (ret)
+		return ret;
 
 	sctl = mdss_mdp_get_split_ctl(ctl);
 
@@ -3468,6 +3466,25 @@ int mdss_mdp_ctl_update_fps(struct mdss_mdp_ctl *ctl, int fps)
 		ret = ctl->ops.config_fps_fnc(ctl, sctl, fps);
 
 	mutex_unlock(&ctl->offlock);
+
+	return ret;
+}
+
+int mdss_mdp_ctl_update_dsitiming(struct mdss_mdp_ctl *ctl, u32 bitrate)
+{
+	int ret = 0;
+	struct mdss_mdp_ctl *sctl = NULL;
+
+	pr_debug("%s: timing = %d \n", __func__, bitrate);
+	mutex_lock(&ctl->offlock);
+
+	sctl = mdss_mdp_get_split_ctl(ctl);
+	if (ctl->ops.config_dsitiming_fnc)
+		ret = ctl->ops.config_dsitiming_fnc(ctl, sctl, bitrate);
+
+	mutex_unlock(&ctl->offlock);
+
+	pr_debug("%s: timing = %d \n", __func__, bitrate);
 
 	return ret;
 }
