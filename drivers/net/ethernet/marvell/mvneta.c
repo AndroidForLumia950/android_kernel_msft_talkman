@@ -2264,7 +2264,6 @@ static int mvneta_change_mtu(struct net_device *dev, int mtu)
 	mvneta_setup_txqs(pp);
 
 	mvneta_start_dev(pp);
-	mvneta_port_up(pp);
 
 	return 0;
 }
