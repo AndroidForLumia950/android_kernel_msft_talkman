@@ -4093,7 +4093,7 @@ static int flush_space(struct btrfs_root *root,
 		break;
 	}
 
-	return ret;
+	return 0;
 }
 /**
  * reserve_metadata_bytes - try to reserve bytes from the block_rsv's space
