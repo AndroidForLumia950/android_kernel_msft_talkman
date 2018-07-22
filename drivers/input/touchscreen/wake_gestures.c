@@ -32,7 +32,6 @@
 #include <linux/input.h>
 #include <linux/hrtimer.h>
 #include <asm-generic/cputime.h>
-#include <linux/wakelock.h>
 
 /* Tuneables */
 #define WG_DEBUG		0
@@ -106,7 +105,6 @@ static struct input_dev * wake_dev;
 static DEFINE_MUTEX(pwrkeyworklock);
 static struct work_struct s2w_input_work;
 static struct work_struct dt2w_input_work;
-static struct wake_lock dt2w_wakelock;
 
 void wg_setdev(struct input_dev * input_device) {
 	wake_dev = input_device;
@@ -123,7 +121,6 @@ static void report_gesture(int gest)
 	if (pwrtrigger_time[0] - pwrtrigger_time[1] < TRIGGER_TIMEOUT)
 		return;
 
-	wake_lock_timeout(&dt2w_wakelock, 150);
 	input_report_rel(gesture_dev, WAKE_GESTURE, gest);
 	input_sync(gesture_dev);
 }
@@ -177,8 +174,6 @@ static void wake_pwrtrigger(bool camera_trigger) {
 /* Doubletap2wake */
 
 static void doubletap2wake_reset(void) {
-	if (wake_lock_active(&dt2w_wakelock))
-		wake_unlock(&dt2w_wakelock);
 	exec_count = true;
 	touch_nr = 0;
 	tap_time_pre = 0;
@@ -200,7 +195,6 @@ static void new_touch(int x, int y) {
 	x_pre = x;
 	y_pre = y;
 	touch_nr++;
-	wake_lock_timeout(&dt2w_wakelock, 150);
 }
 
 /* Doubletap2wake main function */
@@ -566,7 +560,6 @@ static void unregister_wg(void)
 		return;
 
 	registered = false;
-	wake_lock_destroy(&dt2w_wakelock);
 	input_unregister_handler(&wg_input_handler);
 
 	cancel_work_sync(&dt2w_input_work);
@@ -588,7 +581,6 @@ static int register_wg(void)
 
 	INIT_WORK(&s2w_input_work, s2w_input_callback);
 	INIT_WORK(&dt2w_input_work, dt2w_input_callback);
-	wake_lock_init(&dt2w_wakelock, WAKE_LOCK_SUSPEND, "dt2w_wakelock");
 
 	rc = input_register_handler(&wg_input_handler);
 	if (rc) {
@@ -600,7 +592,6 @@ static int register_wg(void)
 
 	return rc;
 err:
-	wake_lock_destroy(&dt2w_wakelock);
 	return rc;
 }
 
@@ -789,8 +780,6 @@ static int __init wake_gestures_init(void)
 
 	rc = register_wg();
 		
-	wake_lock_init(&dt2w_wakelock, WAKE_LOCK_SUSPEND, "dt2w_wakelock");
-		
 #if (WAKE_GESTURES_ENABLED)
 	gesture_dev = input_allocate_device();
 	if (!gesture_dev) {
@@ -853,7 +842,6 @@ static void __exit wake_gestures_exit(void)
 {
 	kobject_del(android_touch_kobj);
 	input_free_device(wake_dev);
-	wake_lock_destroy(&dt2w_wakelock);
 	unregister_wg();
 #if (WAKE_GESTURES_ENABLED)	
 	input_unregister_device(gesture_dev);
