@@ -1192,6 +1192,12 @@ static void atc_free_chan_resources(struct dma_chan *chan)
 	kfree(chan->private);
 	chan->private = NULL;
 
+	/*
+	 * Free atslave allocated in at_dma_xlate()
+	 */
+	kfree(chan->private);
+	chan->private = NULL;
+
 	dev_vdbg(chan2dev(chan), "free_chan_resources: done\n");
 }
 
