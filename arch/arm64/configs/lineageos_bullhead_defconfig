@@ -2999,6 +2999,7 @@ CONFIG_LEDS_QPNP_WLED=y
 # CONFIG_LEDS_OT200 is not set
 # CONFIG_LEDS_BLINKM is not set
 # CONFIG_LEDS_AW2013 is not set
+# CONFIG_LEDS_TALKMAN is not set
 
 #
 # LED Triggers
