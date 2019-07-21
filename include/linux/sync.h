@@ -164,6 +164,9 @@ struct sync_fence {
 	struct file		*file;
 	struct kref		kref;
 	char			name[32];
+#ifdef CONFIG_SYNC_DEBUG
+	char			name[64];
+#endif
 
 	/* this list is immutable once the fence is created */
 	struct list_head	pt_list_head;
