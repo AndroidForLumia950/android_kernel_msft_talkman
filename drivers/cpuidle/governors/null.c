@@ -1,20 +1,11 @@
-/*
- * null.c - the nop idle governor
- * Copyright (C) 2015 Google, Inc.
- *
- * This software is licensed under the terms of the GNU General Public
- * License version 2, as published by the Free Software Foundation, and
- * may be copied, distributed, and modified under those terms.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- */
-
 #include <linux/cpuidle.h>
 #include <linux/module.h>
+#include <linux/smp.h>
+#include <linux/cpu.h>
+#include <linux/jiffies.h>
+
+/* Wait time before enabling single-core mode after boot (e.g., 60 seconds) */
+#define SINGLE_CORE_MODE_DELAY (60 * HZ)
 
 static int null_enable_device(struct cpuidle_driver *drv,
 			      struct cpuidle_device *dev)
@@ -24,7 +15,17 @@ static int null_enable_device(struct cpuidle_driver *drv,
 
 static int null_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 {
-	return CPUIDLE_DRIVER_STATE_START;
+	/* Allow all cores to idle normally during the delay period */
+	if (time_after(jiffies, SINGLE_CORE_MODE_DELAY)) {
+		/* Only allow CPU 0 to stay active, put others offline if possible */
+		if (dev->cpu != 0) {
+			cpu_down(dev->cpu);
+			return -1; /* Indicate no idle state for other cores */
+		}
+	} else {
+		/* Allow normal idling behavior for all cores */
+		return CPUIDLE_DRIVER_STATE_START;
+	}
 }
 
 static struct cpuidle_governor null_governor = {
@@ -40,11 +41,5 @@ static int __init init_null(void)
 	return cpuidle_register_governor(&null_governor);
 }
 
-static void __exit exit_null(void)
-{
-	cpuidle_unregister_governor(&null_governor);
-}
-
-MODULE_LICENSE("GPL");
-module_init(init_null);
-module_exit(exit_null);
+/* Register with postcore_init to defer initialization until core kernel setup completes */
+postcore_initcall(init_null);
