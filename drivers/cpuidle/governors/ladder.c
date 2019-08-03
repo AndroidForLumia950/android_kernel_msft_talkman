@@ -21,7 +21,7 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 
-#define PROMOTION_COUNT 4
+#define PROMOTION_COUNT 5
 #define DEMOTION_COUNT 1
 
 struct ladder_device_state {

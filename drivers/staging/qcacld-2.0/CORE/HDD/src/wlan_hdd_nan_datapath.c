@@ -756,6 +756,90 @@ static void hdd_ndp_peer_departed_ind_handler(
 static void hdd_ndp_confirm_ind_handler(hdd_adapter_t *adapter,
 						void *ind_params)
 {
+	int idx;
+	struct ndp_confirm_event *ndp_confirm = ind_params;
+	struct sk_buff *vendor_event;
+	hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+	struct nan_datapath_ctx *ndp_ctx = WLAN_HDD_GET_NDP_CTX_PTR(adapter);
+	hdd_station_ctx_t *sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
+	uint32_t data_len;
+
+	ENTER();
+	if (!ndp_confirm) {
+		hddLog(LOGE, FL("Invalid NDP Initator response"));
+		return;
+	}
+
+	if (0 != wlan_hdd_validate_context(hdd_ctx))
+		return;
+
+	/* ndp_confirm is called each time user generated ndp req succeeds */
+	idx = hdd_get_peer_idx(sta_ctx, &ndp_confirm->peer_ndi_mac_addr);
+	if (idx == INVALID_PEER_IDX)
+		hddLog(LOGE,
+			FL("can't find addr: %pM in vdev_id: %d, peer table."),
+			&ndp_confirm->peer_ndi_mac_addr, adapter->sessionId);
+	else if (ndp_confirm->rsp_code == NDP_RESPONSE_ACCEPT)
+		ndp_ctx->active_ndp_sessions[idx]++;
+
+	data_len = (4 * sizeof(uint32_t)) + VOS_MAC_ADDR_SIZE + IFNAMSIZ +
+			NLMSG_HDRLEN + (6 * NLA_HDRLEN);
+
+	if (ndp_confirm->ndp_info.ndp_app_info_len)
+		data_len += NLA_HDRLEN + ndp_confirm->ndp_info.ndp_app_info_len;
+
+	vendor_event = cfg80211_vendor_event_alloc(hdd_ctx->wiphy, NULL,
+				data_len, QCA_NL80211_VENDOR_SUBCMD_NDP_INDEX,
+				GFP_KERNEL);
+	if (!vendor_event) {
+		hddLog(LOGE, FL("cfg80211_vendor_event_alloc failed"));
+		return;
+	}
+
+	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD,
+			QCA_WLAN_VENDOR_ATTR_NDP_CONFIRM_IND))
+		goto ndp_confirm_nla_failed;
+
+	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID,
+			ndp_confirm->ndp_instance_id))
+		goto ndp_confirm_nla_failed;
+
+	if (nla_put(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_NDI_MAC_ADDR,
+		VOS_MAC_ADDR_SIZE, ndp_confirm->peer_ndi_mac_addr.bytes))
+		goto ndp_confirm_nla_failed;
+
+	if (nla_put(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_IFACE_STR,
+		    IFNAMSIZ, adapter->dev->name))
+		goto ndp_confirm_nla_failed;
+
+	if (ndp_confirm->ndp_info.ndp_app_info_len && nla_put(vendor_event,
+			QCA_WLAN_VENDOR_ATTR_NDP_APP_INFO,
+			ndp_confirm->ndp_info.ndp_app_info_len,
+			ndp_confirm->ndp_info.ndp_app_info))
+		goto ndp_confirm_nla_failed;
+
+	if (nla_put_u32(vendor_event,
+			QCA_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE,
+			ndp_confirm->rsp_code))
+		goto ndp_confirm_nla_failed;
+
+	if (nla_put_u32(vendor_event,
+			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
+			ndp_confirm->reason_code))
+		goto ndp_confirm_nla_failed;
+
+	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
+	hddLog(LOG1, FL("NDP confim sent, ndp instance id: %d, peer addr: %pM, rsp_code: %d, reason_code: %d"),
+		ndp_confirm->ndp_instance_id,
+		ndp_confirm->peer_ndi_mac_addr.bytes,
+		ndp_confirm->rsp_code,
+		ndp_confirm->reason_code);
+
+	hddLog(LOG1, FL("NDP confim, ndp app info dump"));
+	VOS_TRACE_HEX_DUMP(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_DEBUG,
+			   ndp_confirm->ndp_info.ndp_app_info,
+			   ndp_confirm->ndp_info.ndp_app_info_len);
+	EXIT();
 	return;
 }
 
