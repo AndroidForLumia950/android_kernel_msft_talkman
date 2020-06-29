@@ -7938,6 +7938,8 @@ out:
 	return -ENOMEM;
 }
 
+int sched_smt_power_savings = 0, sched_mc_power_savings = 2;
+
 /*
  * By default the system creates a single root-domain with all cpus as
  * members (mimicking the global state we have today).
