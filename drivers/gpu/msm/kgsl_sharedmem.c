@@ -103,7 +103,7 @@ _get_priv_from_kobj(struct kobject *kobj)
 		return NULL;
 
 	list_for_each_entry(private, &kgsl_driver.process_list, list) {
-		if (private->pid == name)
+		if (pid_nr(private->pid) == name)
 			return private;
 	}
 
@@ -210,7 +210,7 @@ kgsl_process_init_sysfs(struct kgsl_device *device,
 	unsigned char name[16];
 	int i, ret = 0;
 
-	snprintf(name, sizeof(name), "%d", private->pid);
+	snprintf(name, sizeof(name), "%d", pid_nr(private->pid));
 
 	ret = kobject_init_and_add(&private->kobj, &ktype_mem_entry,
 		kgsl_driver.prockobj, name);
