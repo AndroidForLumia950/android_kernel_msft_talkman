@@ -4,6 +4,13 @@
 
 if VIDEO_V4L2
 
+config VIDEO_AS3638
+	tristate "AS3638 flash driver support"
+	depends on I2C && VIDEO_V4L2 && MEDIA_CONTROLLER
+	depends on MEDIA_CAMERA_SUPPORT
+	---help---
+	  This is a driver for the AS3638 triple flash controller.
+
 config VIDEO_IR_I2C
 	tristate "I2C module for IR" if !MEDIA_SUBDRV_AUTOSELECT
 	depends on I2C && RC_CORE
