@@ -31,10 +31,10 @@
 			reg = <0x28>;
 
 			interrupt-parent = <&msm_gpio>;
-			interrupts = <&msm_gpio 29 IRQ_TYPE_EDGE_RISING>;
+			interrupts = <&msm_gpio 29 0x1>;
 
-			enable-gpios = <&msm_gpio 30 GPIO_ACTIVE_HIGH>;
-			firmware-gpios = <&msm_gpio 94 GPIO_ACTIVE_HIGH>;
+			enable-gpios = <&msm_gpio 30 0>;
+			firmware-gpios = <&msm_gpio 94 0>;
 		};
 	};
 };
