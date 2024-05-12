@@ -1,0 +1,48 @@
+microsoft,microsoft_bvt5e_3000mah {
+       /* #1956563_Microsoft_BVT5E_3000mAh_Master_Mar27th2015*/
+       qcom,max-voltage-uv = <4400000>;
+       qcom,nom-batt-capacity-mah = <3000>;
+       qcom,batt-id-kohm = <330>;
+       qcom,battery-beta = <4050>;
+       qcom,battery-type = "microsoft_bvt5e_3000mah";
+	qcom,chg-rslow-comp-c1 = <3051>;
+	qcom,chg-rslow-comp-c2 = <3795>;
+	qcom,chg-rs-to-rslow = <978>;
+	qcom,chg-rslow-comp-thr = <600>;
+       qcom,checksum = <0x23BE>;
+       qcom,gui-version = "PMI8994GUI - 2.1.6.2";
+       qcom,fg-profile-data = [
+              FE 83 05 7E 
+              0F 82 89 7C 
+              76 83 52 7C 
+              77 8B 87 95 
+              1B 82 02 99 
+              9B B6 D0 C1 
+              58 17 08 88 
+              79 7E 77 82 
+              02 7D 56 83 
+              EF 60 A2 80 
+              A8 8C 56 82 
+              34 98 96 B5 
+              FF C0 58 16 
+              DA 0B 0D 5A 
+              14 70 B8 FE 
+              76 45 38 3E 
+              FE 3A 00 00 
+              D9 47 5D 30 
+              FE 32 00 00 
+              00 00 00 00 
+              00 00 00 00 
+              18 70 63 6A 
+              E4 6B 41 83 
+              A5 74 AE 62 
+              A8 68 36 80 
+              DE 6E 7D 60 
+              A6 7D 65 BB 
+              0E B5 5B 4C 
+              5C A0 71 0C 
+              28 00 FF 36 
+              F0 11 30 03 
+              00 00 00 00
+      ];
+};

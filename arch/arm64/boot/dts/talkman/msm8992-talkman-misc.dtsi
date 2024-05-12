@@ -1,0 +1,90 @@
+/* Copyright (c) 2015, LGE Inc. All rights reserved.
+ * Copyright (c) 2014, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+&soc {
+	gpio_keys {
+		compatible = "gpio-keys";
+		input-name = "gpio-keys";
+		autorepeat;
+		
+		vol_up {
+			label = "volume_up";
+			gpios = <&pm8994_gpios 3 0x1>;
+			linux,input-type = <1>;
+			linux,code = <115>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+		};
+
+		cam_snapshot {
+			label = "cam_snapshot";
+			gpios = <&pm8994_gpios 4 0x1>;
+			linux,input-type = <1>;
+			linux,code = <766>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+		};
+
+		cam_focus {
+			label = "cam_focus";
+			gpios = <&pm8994_gpios 5 0x1>;
+			linux,input-type = <1>;
+			linux,code = <528>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+		};
+	};
+};
+
+&pmi8994_haptics {
+	status = "okay";
+	qcom,actuator-type = "erm";
+	qcom,vmax-mv = <2300>;
+	qcom,ilim-ma = <800>;
+	qcom,sc-deb-cycles = <8>;
+	qcom,int-pwm-freq-khz = <505>;
+	qcom,wave-shape = "square";
+	qcom,lra-auto-res-mode = "none";
+	qcom,lra-high-z = "none";
+	qcom,lra-res-cal-period = <4>;
+	qcom,use-sc-irq;
+	qcom,brake-pattern = [ 00 11 11 11 ];
+};
+
+&i2c_5 {
+	status = "okay";
+
+	magnetometer@c {
+		compatible = "ak,ak8975";
+		reg = <0xc>;
+		interrupt-parent = <&msm_gpio>;
+		interrupts = <26 0x1>;
+		vdd-supply = <&pm8994_l18>;
+		vid-supply = <&pm8994_lvs2>;
+	};
+
+	mpu6050@68 { /* Gyroscope and accelerometer sensor combo */
+		compatible = "invn,mpu6050";
+		reg = <0x68>;
+		pinctrl-names = "mpu_default","mpu_sleep";
+		pinctrl-0 = <&mpu6050_default>;
+		pinctrl-1 = <&mpu6050_sleep>;
+		interrupt-parent = <&msm_gpio>;
+		interrupts = <64 0x1>;
+		vdd-supply = <&pm8994_lvs2>;
+		vlogic-supply = <&pm8994_lvs2>;
+		vi2c-supply = <&pm8994_lvs2>;
+		invn,place = "Portrait Down Back Side";
+	};
+
+};
