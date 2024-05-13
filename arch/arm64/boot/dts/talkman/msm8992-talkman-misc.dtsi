@@ -65,7 +65,7 @@
 	status = "okay";
 
 	magnetometer@c {
-		compatible = "ak,ak8975";
+		compatible = "asahi-kasei,ak09912";
 		reg = <0xc>;
 		interrupt-parent = <&msm_gpio>;
 		interrupts = <26 0x1>;
