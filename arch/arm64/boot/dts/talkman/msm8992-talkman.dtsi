@@ -75,7 +75,11 @@
 };
 
 &modem_mem {
-	reg = <0 0x06F00000 0 0x5900000>;
+	reg = <0 0x07400000 0 0x5a00000>;
+};
+
+&peripheral_mem {
+	reg = <0 0xce00000 0 0x1c00000>;
 };
 
 &blsp1_uart2 {
