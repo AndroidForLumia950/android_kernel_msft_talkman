@@ -32,10 +32,6 @@
 #include <soc/qcom/restart.h>
 #include <soc/qcom/watchdog.h>
 
-#ifdef CONFIG_LGE_HANDLE_PANIC
-#include <soc/qcom/lge/lge_handle_panic.h>
-#endif
-
 #define EMERGENCY_DLOAD_MAGIC1    0x322A4F99
 #define EMERGENCY_DLOAD_MAGIC2    0xC67E4350
 #define EMERGENCY_DLOAD_MAGIC3    0x77777777
@@ -47,7 +43,9 @@
 #define SCM_EDLOAD_MODE			0X01
 #define SCM_DLOAD_CMD			0x10
 
+
 static int restart_mode;
+void *restart_reason;
 static bool scm_pmic_arbiter_disable_supported;
 static bool scm_deassert_ps_hold_supported;
 /* Download mode master kill-switch */
@@ -118,12 +116,13 @@ static void set_dload_mode(int on)
 		pr_err("Failed to set secure DLOAD mode: %d\n", ret);
 
 	dload_mode_enabled = on;
-
-	flush_cache_all();
-
 }
 
-#if 0
+static bool get_dload_mode(void)
+{
+	return dload_mode_enabled;
+}
+
 static void enable_emergency_dload_mode(void)
 {
 	int ret;
@@ -148,7 +147,6 @@ static void enable_emergency_dload_mode(void)
 	if (ret)
 		pr_err("Failed to set secure EDLOAD mode: %d\n", ret);
 }
-#endif
 
 static int dload_set(const char *val, struct kernel_param *kp)
 {
@@ -166,11 +164,6 @@ static int dload_set(const char *val, struct kernel_param *kp)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_LGE_HANDLE_PANIC
-	if (!download_mode)
-		lge_panic_handler_fb_cleanup();
-#endif
-
 	set_dload_mode(download_mode);
 
 	return 0;
@@ -183,6 +176,10 @@ static void enable_emergency_dload_mode(void)
 	pr_err("dload mode is not enabled on target\n");
 }
 
+static bool get_dload_mode(void)
+{
+	return false;
+}
 #endif
 
 void msm_set_restart_mode(int mode)
@@ -217,11 +214,8 @@ static void halt_spmi_pmic_arbiter(void)
 
 static void msm_restart_prepare(const char *cmd)
 {
-	enum pon_power_off_type poff = PON_POWER_OFF_HARD_RESET;
-	uint8_t reason = BOOT_UNKNOWN;
-#ifdef CONFIG_LGE_HANDLE_PANIC
-	bool use_hardreset = false;
-#endif
+	bool need_warm_reset = false;
+
 #ifdef CONFIG_MSM_DLOAD_MODE
 
 	/* Write download mode flags if we're panic'ing
@@ -233,58 +227,64 @@ static void msm_restart_prepare(const char *cmd)
 			(in_panic || restart_mode == RESTART_DLOAD));
 #endif
 
+	need_warm_reset = (get_dload_mode() ||
+				(cmd != NULL && cmd[0] != '\0'));
+
+	if (qpnp_pon_check_hard_reset_stored()) {
+		/* Set warm reset as true when device is in dload mode
+		 *  or device doesn't boot up into recovery, bootloader or rtc.
+		 */
+		if (get_dload_mode() ||
+			((cmd != NULL && cmd[0] != '\0') &&
+			strcmp(cmd, "recovery") &&
+			strcmp(cmd, "bootloader") &&
+			strcmp(cmd, "rtc") &&
+			strcmp(cmd, "dm-verity device corrupted") &&
+			strcmp(cmd, "dm-verity enforcing") &&
+			strcmp(cmd, "keys clear")))
+			need_warm_reset = true;
+	}
+
+	/* Hard reset the PMIC unless memory contents must be maintained. */
+	if (need_warm_reset) {
+		qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
+	} else {
+		qpnp_pon_system_pwr_off(PON_POWER_OFF_HARD_RESET);
+	}
+
 	if (cmd != NULL) {
 		if (!strncmp(cmd, "bootloader", 10)) {
-			reason = FASTBOOT_MODE;
+			qpnp_pon_set_restart_reason(
+				PON_RESTART_REASON_BOOTLOADER);
+			__raw_writel(0x77665500, restart_reason);
 		} else if (!strncmp(cmd, "recovery", 8)) {
-			reason = RECOVERY_MODE;
-		} else if (!strncmp(cmd, "rtc", 3)) {
-			reason = ALARM_BOOT;
-		} else if (!strncmp(cmd, "dm-verity device corrupted", 26 )) {
-			reason = VERITY_BOOT;
+			qpnp_pon_set_restart_reason(
+				PON_RESTART_REASON_RECOVERY);
+			__raw_writel(0x77665502, restart_reason);
+		} else if (!strcmp(cmd, "rtc")) {
+			qpnp_pon_set_restart_reason(
+				PON_RESTART_REASON_RTC);
+			__raw_writel(0x77665503, restart_reason);
+		} else if (!strcmp(cmd, "dm-verity device corrupted")) {
+			__raw_writel(0x77665508, restart_reason);
+		} else if (!strcmp(cmd, "dm-verity enforcing")) {
+			__raw_writel(0x77665509, restart_reason);
+		} else if (!strcmp(cmd, "keys clear")) {
+			__raw_writel(0x7766550a, restart_reason);
 		} else if (!strncmp(cmd, "oem-", 4)) {
 			unsigned long code;
 			int ret;
 			ret = kstrtoul(cmd + 4, 16, &code);
 			if (!ret)
-				lge_set_restart_reason(0x6f656d00 | (code & 0xff));
-
-			poff = PON_POWER_OFF_WARM_RESET;
-#if 0
+				__raw_writel(0x6f656d00 | (code & 0xff),
+					     restart_reason);
 		} else if (!strncmp(cmd, "edl", 3)) {
 			enable_emergency_dload_mode();
-			poff = PON_POWER_OFF_WARM_RESET;
-#endif
 		} else {
-			lge_set_restart_reason(0x77665501);
-			reason = BOOT_OTHER;
+			__raw_writel(0x77665501, restart_reason);
 		}
 	}
-#ifdef CONFIG_LGE_HANDLE_PANIC
-	else {
-		lge_set_restart_reason(0x776655ff);
-	}
 
-	if (restart_mode == RESTART_DLOAD) {
-		set_dload_mode(0);
-		lge_set_restart_reason(LAF_DLOAD_MODE);
-	}
-
-	if (in_panic) {
-		use_hardreset = lge_set_panic_reason();
-	} else
-#endif
-	{ /* else */
-		qpnp_pon_set_restart_reason(reason);
-	}
-	if (in_panic || restart_mode)
-		poff = PON_POWER_OFF_WARM_RESET;
-
-#ifdef CONFIG_LGE_HANDLE_PANIC
-	if (use_hardreset && !dload_mode_enabled)
-		poff = PON_POWER_OFF_HARD_RESET;
-#endif
-	qpnp_pon_system_pwr_off(poff);
 	flush_cache_all();
 
 	/*outer_flush_all is not supported by 64bit kernel*/
@@ -327,13 +327,7 @@ static void do_msm_restart(enum reboot_mode reboot_mode, const char *cmd)
 		.arginfo = SCM_ARGS(2),
 	};
 
-#ifdef CONFIG_LGE_HANDLE_PANIC
-	struct task_struct *task = current_thread_info()->task;
-	pr_notice("Going down for restart now (pid: %d, comm: %s)\n",
-			task->pid, task->comm);
-#else
 	pr_notice("Going down for restart now\n");
-#endif
 
 	msm_restart_prepare(cmd);
 
@@ -372,14 +366,7 @@ static void do_msm_poweroff(void)
 		.arginfo = SCM_ARGS(2),
 	};
 
-#ifdef CONFIG_LGE_HANDLE_PANIC
-	struct task_struct *task = current_thread_info()->task;
-	pr_notice("Powering off the SoC (pid: %d, comm: %s)\n",
-			task->pid, task->comm);
-#else
 	pr_notice("Powering off the SoC\n");
-#endif
-
 #ifdef CONFIG_MSM_DLOAD_MODE
 	set_dload_mode(0);
 #endif
@@ -412,16 +399,15 @@ static int msm_restart_probe(struct platform_device *pdev)
 #ifdef CONFIG_MSM_DLOAD_MODE
 	if (scm_is_call_available(SCM_SVC_BOOT, SCM_DLOAD_CMD) > 0)
 		scm_dload_supported = true;
+
 	atomic_notifier_chain_register(&panic_notifier_list, &panic_blk);
 	np = of_find_compatible_node(NULL, NULL, DL_MODE_PROP);
 	if (!np) {
 		pr_err("unable to find DT imem DLOAD mode node\n");
 	} else {
 		dload_mode_addr = of_iomap(np, 0);
-		if (!dload_mode_addr) {
+		if (!dload_mode_addr)
 			pr_err("unable to map imem DLOAD offset\n");
-			return -ENOMEM;
-		}
 	}
 
 	np = of_find_compatible_node(NULL, NULL, EDL_MODE_PROP);
@@ -429,21 +415,28 @@ static int msm_restart_probe(struct platform_device *pdev)
 		pr_err("unable to find DT imem EDLOAD mode node\n");
 	} else {
 		emergency_dload_mode_addr = of_iomap(np, 0);
-		if (!emergency_dload_mode_addr) {
+		if (!emergency_dload_mode_addr)
 			pr_err("unable to map imem EDLOAD mode offset\n");
-			ret = -ENOMEM;
-			goto err_edload_mode_addr;
-		}
 	}
 
 #endif
+	np = of_find_compatible_node(NULL, NULL,
+				"qcom,msm-imem-restart_reason");
+	if (!np) {
+		pr_err("unable to find DT imem restart reason node\n");
+	} else {
+		restart_reason = of_iomap(np, 0);
+		if (!restart_reason) {
+			pr_err("unable to map imem restart reason offset\n");
+			ret = -ENOMEM;
+			goto err_restart_reason;
+		}
+	}
 
 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	msm_ps_hold = devm_ioremap_resource(dev, mem);
-	if (IS_ERR(msm_ps_hold)) {
-		ret =  PTR_ERR(msm_ps_hold);
-		goto msm_ps_hold_err;
-	}
+	if (IS_ERR(msm_ps_hold))
+		return PTR_ERR(msm_ps_hold);
 
 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 	if (mem)
@@ -462,10 +455,9 @@ static int msm_restart_probe(struct platform_device *pdev)
 
 	return 0;
 
-msm_ps_hold_err:
+err_restart_reason:
 #ifdef CONFIG_MSM_DLOAD_MODE
 	iounmap(emergency_dload_mode_addr);
-err_edload_mode_addr:
 	iounmap(dload_mode_addr);
 #endif
 	return ret;
