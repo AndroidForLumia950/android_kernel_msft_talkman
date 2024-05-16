@@ -12,7 +12,6 @@
  */
 
 &soc {
-	
 	tlmm_pinmux: pinctrl@fd510000 {
 		compatible = "qcom,msm-tlmm-8994", "qcom,msm-tlmm-8974";
 		reg = <0xfd510000 0x4000>;
@@ -325,6 +324,7 @@
 				drive-strength = <2>;
 				bias-pull-down;
 			};
+		};
 		
 		pmx_ts_reset {
 			qcom,pins = <&gp 8>;
@@ -335,23 +335,6 @@
 				drive-strength = <2>;
 				bias-disable;
 			};
-		};
-		
-		mpu6050_int_pin {
-			/* Gyroscope and accelerometer sensor combo */
-			qcom,pins = <&gp 64>;
-			qcom,pin-func = <0>;
-			qcom,num-grp-pins = <1>;
-			label = "mpu6050-irq";
-			mpu6050_default: mpu6050_default {
-				drive-strength = <6>;
-				bias-pull-down;
-			};
-			mpu6050_sleep: mpu6050_sleep {
-				drive-strength = <2>;
-				bias-pull-down;
-			};
-		};
 			ts_reset_suspend: ts_reset_suspend {
 				drive-strength = <2>;
 				bias-disable;
@@ -557,7 +540,98 @@
 				bias-disable;		/* NO PULL */
 			};
 		};
-		
+		pmx_quat_mi2s_sleep {
+		    qcom,pins = <&gp 58>, <&gp 59>;
+		    qcom,num-grp-pins = <2>;
+		    qcom,pin-func = <0>;
+		    label = "quat_mi2s_sleep";
+		    quat_mi2s_sleep: quat_mi2s_sleep {
+		    drive-strength = <2>;	/* 2 mA */
+		    bias-pull-down;		/* PULL DOWN */
+		    input-enable;
+		    };
+		};
+
+		pmx_quat_mi2s_active {
+		    qcom,pins = <&gp 58>, <&gp 59>;
+		    qcom,num-grp-pins = <2>;
+		    qcom,pin-func = <1>;
+		    label = "quat_mi2s_active";
+		    quat_mi2s_active: quat_mi2s_active {
+		    drive-strength = <8>;	/* 8 mA */
+		    bias-disable;		/* NO PULL */
+		    output-high;
+		    };
+		};
+
+		pmx_quat_mi2s_mclk_sleep {
+		    qcom,pins = <&gp 57>;
+		    qcom,num-grp-pins = <1>;
+		    qcom,pin-func = <0>;
+		    label = "quat_mi2s_mclk_sleep";
+		    quat_mi2s_mclk_sleep: quat_mi2s_mclk_sleep {
+		    drive-strength = <2>;	/* 2 mA */
+		    bias-pull-down;		/* PULL DOWN */
+		    input-enable;
+		    };
+		};
+
+		pmx_quat_mi2s_mclk_active {
+		    qcom,pins = <&gp 57>;
+		    qcom,num-grp-pins = <1>;
+		    qcom,pin-func = <1>;
+		    label = "quat_mi2s_mclk_active";
+		    quat_mi2s_mclk_active: quat_mi2s_mclk_active {
+		    drive-strength = <8>;	/* 8 mA */
+		    bias-disable;		/* NO PULL */
+		    };
+		};
+
+		pmx_quat_mi2s_sd0_sleep {
+		    qcom,pins = <&gp 60>;
+		    qcom,num-grp-pins = <1>;
+		    qcom,pin-func = <0>;
+		    label = "quat_mi2s_sd0_sleep";
+		    quat_mi2s_sd0_sleep: quat_mi2s_sd0_sleep {
+		    drive-strength = <2>;	/* 2 mA */
+		    bias-pull-down;		/* PULL DOWN */
+		    input-enable;
+		    };
+		};
+
+		pmx_quat_mi2s_sd0_active {
+		    qcom,pins = <&gp 60>;
+		    qcom,num-grp-pins = <1>;
+		    qcom,pin-func = <1>;
+		    label = "quat_mi2s_sd0_active";
+		    quat_mi2s_sd0_active: quat_mi2s_sd0_active {
+		    drive-strength = <8>;	/* 8 mA */
+		    bias-disable;		/* NO PULL */
+		    };
+		};
+
+		pmx_quat_mi2s_sd1_sleep {
+		    qcom,pins = <&gp 61>;
+		    qcom,num-grp-pins = <1>;
+		    qcom,pin-func = <0>;
+		    label = "quat_mi2s_sd1_sleep";
+		    quat_mi2s_sd1_sleep: quat_mi2s_sd1_sleep {
+		    drive-strength = <2>;	/* 2 mA */
+		    bias-pull-down;		/* PULL DOWN */
+		    input-enable;
+		    };
+		};
+
+		pmx_quat_mi2s_sd1_active {
+		    qcom,pins = <&gp 61>;
+		    qcom,num-grp-pins = <1>;
+		    qcom,pin-func = <1>;
+		    label = "quat_mi2s_sd1_active";
+		    quat_mi2s_sd1_active: quat_mi2s_sd1_active {
+		    drive-strength = <8>;	/* 8 mA */
+		    bias-disable;		/* NO PULL */
+		    };
+		};
 		pmx_sensorhub_ctrl {
 			/* NRST, BOOT0, SPI7 CS */
 			qcom,pins = <&gp 59>, <&gp 60>, <&gp 43>;
@@ -742,6 +816,22 @@
 			cam_sensor_front_suspend: cam_sensor_front_suspend {
 				drive-strength = <2>;
 				bias-disable;
+			};
+		};
+		
+		mpu6050_int_pin {
+			/* Gyroscope and accelerometer sensor combo */
+			qcom,pins = <&gp 64>;
+			qcom,pin-func = <0>;
+			qcom,num-grp-pins = <1>;
+			label = "mpu6050-irq";
+			mpu6050_default: mpu6050_default {
+				drive-strength = <6>;
+				bias-pull-down;
+			};
+			mpu6050_sleep: mpu6050_sleep {
+				drive-strength = <2>;
+				bias-pull-down;
 			};
 		};
 	};
