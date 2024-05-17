@@ -97,6 +97,14 @@
 #define QSERDES_RX_SIGDET_CNTRL	0x500
 #define QSERDES_RX_SIGDET_DEGLITCH_CNTRL	0x504
 
+#define QSERDES_COM_SSC_EN_CENTER 0x0B4
+#define QSERDES_COM_SSC_ADJ_PER1 0x0B8
+#define QSERDES_COM_SSC_PER1 0x0C0
+#define QPHY_FLL_CNTRL1 0xc4
+#define QPHY_FLL_CNTRL2 0xc8
+#define QPHY_FLL_CNT_VAL_L 0xcc
+
+
 #define QSERDES_RX_PI_CTRL1	0x558
 #define QSERDES_RX_PI_CTRL2	0x55C
 #define QSERDES_RX_PI_QUAD	0x560
@@ -301,27 +309,15 @@
 	} while (0)
 
 #define PCIE_DBG(dev, fmt, arg...) do {			 \
-	if ((dev) && (dev)->ipc_log_long)   \
-		ipc_log_string((dev)->ipc_log_long, \
-			"DBG1:%s: " fmt, __func__, arg); \
-	if ((dev) && (dev)->ipc_log)   \
-		ipc_log_string((dev)->ipc_log, "%s: " fmt, __func__, arg); \
-	if (msm_pcie_debug_mask)   \
-		pr_alert("%s: " fmt, __func__, arg);		  \
+		pr_err("%s: " fmt, __func__, arg);		  \
 	} while (0)
 
 #define PCIE_DBG2(dev, fmt, arg...) do {			 \
-	if ((dev) && (dev)->ipc_log)   \
-		ipc_log_string((dev)->ipc_log, "DBG2:%s: " fmt, __func__, arg);\
-	if (msm_pcie_debug_mask)   \
-		pr_alert("%s: " fmt, __func__, arg);              \
+		pr_err("%s: " fmt, __func__, arg);              \
 	} while (0)
 
 #define PCIE_DBG3(dev, fmt, arg...) do {			 \
-	if ((dev) && (dev)->ipc_log)   \
-		ipc_log_string((dev)->ipc_log, "DBG3:%s: " fmt, __func__, arg);\
-	if (msm_pcie_debug_mask)   \
-		pr_alert("%s: " fmt, __func__, arg);              \
+		pr_err("%s: " fmt, __func__, arg);              \
 	} while (0)
 
 #define PCIE_DUMP(dev, fmt, arg...) do {			\
@@ -702,7 +698,7 @@ static void pcie_phy_init(struct msm_pcie_dev_t *dev)
 		dev->rc_idx);
 
 	/* De-assert Phy SW Reset */
-	pcie20_phy_reset(dev, 1);
+	//pcie20_phy_reset(dev, 1);
 
 	/* Program SSP ENABLE */
 	if (readl_relaxed(dev->phy + PCIE20_PARF_PHY_REFCLK_CTRL2) & BIT(0))
@@ -978,12 +974,12 @@ static void pcie_phy_init(struct msm_pcie_dev_t *dev)
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_DIV_FRAC_START1, 0xD5);
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_DIV_FRAC_START2, 0xAA);
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_DIV_FRAC_START3, 0x4D);
-	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLLLOCK_CMP_EN, 0x03);
-	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLLLOCK_CMP1, 0x06);
-	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLLLOCK_CMP2, 0x1A);
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLLLOCK_CMP_EN, 0x07);
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLLLOCK_CMP1, 0x41);
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLLLOCK_CMP2, 0x3);
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_CRCTRL, 0x7C);
-	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_CP_SETI, 0x1F);
-	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_IP_SETP, 0x12);
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_CP_SETI, 0x7);
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_IP_SETP, 0x1F);
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_CP_SETP, 0x0F);
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_IP_SETI, 0x01);
 
@@ -999,26 +995,23 @@ static void pcie_phy_init(struct msm_pcie_dev_t *dev)
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_CNTRL, 0x46);
 
 	/* CDR Settings */
-	msm_pcie_write_reg(dev->phy, QSERDES_RX_CDR_CONTROL1, 0xF4);
+	msm_pcie_write_reg(dev->phy, QSERDES_RX_CDR_CONTROL1, 0xF5);
 	msm_pcie_write_reg(dev->phy, QSERDES_RX_CDR_CONTROL_HALF, 0x2C);
-
-	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_VCOTAIL_EN, 0xE1);
 
 	/* Calibration Settings */
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_RESETSM_CNTRL, 0x91);
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_RESETSM_CNTRL2, 0x07);
 
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_VCOTAIL_EN, 0xE1);
+
+
 	/* Additional writes */
-	msm_pcie_write_reg(dev->phy, QSERDES_COM_RES_CODE_START_SEG1, 0x20);
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_RES_CODE_START_SEG1, 0x24);
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_RES_CODE_CAL_CSR, 0x77);
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_RES_TRIM_CONTROL, 0x15);
 	msm_pcie_write_reg(dev->phy, QSERDES_TX_RCV_DETECT_LVL, 0x03);
-	msm_pcie_write_reg(dev->phy, QSERDES_RX_UCDR_FO_GAIN, 0x09);
-	msm_pcie_write_reg(dev->phy, QSERDES_RX_UCDR_SO_GAIN, 0x04);
-	msm_pcie_write_reg(dev->phy, QSERDES_RX_UCDR_SO_SATURATION_AND_ENABLE,
-				0x49);
 	msm_pcie_write_reg(dev->phy, QSERDES_RX_RX_EQ_GAIN1_LSB, 0xFF);
-	msm_pcie_write_reg(dev->phy, QSERDES_RX_RX_EQ_GAIN1_MSB, 0x1F);
+	msm_pcie_write_reg(dev->phy, QSERDES_RX_RX_EQ_GAIN1_MSB, 0x7);
 	msm_pcie_write_reg(dev->phy, QSERDES_RX_RX_EQ_GAIN2_LSB, 0xFF);
 	msm_pcie_write_reg(dev->phy, QSERDES_RX_RX_EQ_GAIN2_MSB, 0x00);
 	msm_pcie_write_reg(dev->phy, QSERDES_RX_RX_EQU_ADAPTOR_CNTRL2, 0x1E);
@@ -1026,11 +1019,26 @@ static void pcie_phy_init(struct msm_pcie_dev_t *dev)
 				0x67);
 	msm_pcie_write_reg(dev->phy, QSERDES_RX_RX_OFFSET_ADAPTOR_CNTRL2, 0x80);
 	msm_pcie_write_reg(dev->phy, QSERDES_RX_SIGDET_ENABLES, 0x40);
-	msm_pcie_write_reg(dev->phy, QSERDES_RX_SIGDET_CNTRL, 0xB0);
-	msm_pcie_write_reg(dev->phy, QSERDES_RX_SIGDET_DEGLITCH_CNTRL, 0x06);
+	msm_pcie_write_reg(dev->phy, QSERDES_RX_SIGDET_CNTRL, 0x70);
+	msm_pcie_write_reg(dev->phy, QSERDES_RX_SIGDET_DEGLITCH_CNTRL, 0x0C);
+
+	//msm_pcie_write_reg(dev->phy, QSERDES_RX_UCDR_FO_GAIN, 0x09);
+	//msm_pcie_write_reg(dev->phy, QSERDES_RX_UCDR_SO_GAIN, 0x04);
+	//msm_pcie_write_reg(dev->phy, QSERDES_RX_UCDR_SO_SATURATION_AND_ENABLE,
+	//			0x49);
+	//New stuff from Lumia :)
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_SSC_EN_CENTER, 0x1);
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_SSC_ADJ_PER1, 0x2);
+	msm_pcie_write_reg(dev->phy, QSERDES_COM_SSC_PER1, 0x31);
+	msm_pcie_write_reg(dev->phy, QPHY_FLL_CNTRL1, 0x1);
+	msm_pcie_write_reg(dev->phy, QPHY_FLL_CNTRL2, 0x19);
+	msm_pcie_write_reg(dev->phy, QPHY_FLL_CNT_VAL_L, 0x19);
+
+
+
 	msm_pcie_write_reg(dev->phy, QSERDES_COM_PLL_RXTXEPCLK_EN, 0x10);
 	msm_pcie_write_reg(dev->phy, PCIE_PHY_ENDPOINT_REFCLK_DRIVE, 0x10);
-	msm_pcie_write_reg(dev->phy, PCIE_PHY_POWER_STATE_CONFIG1, 0xA3);
+	msm_pcie_write_reg(dev->phy, PCIE_PHY_POWER_STATE_CONFIG1, 0x23);
 	msm_pcie_write_reg(dev->phy, PCIE_PHY_POWER_STATE_CONFIG2, 0x4B);
 	msm_pcie_write_reg(dev->phy, PCIE_PHY_RX_IDLE_DTCT_CNTRL, 0x4D);
 
