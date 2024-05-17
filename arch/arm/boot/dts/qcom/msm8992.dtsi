@@ -1081,7 +1081,7 @@
 		qcom,aux-clk-sync;
 
 		qcom,ep-latency = <10>;
-		qcom,vbg-opt;
+		//qcom,vbg-opt;
 
 		qcom,ep-wakeirq;
 

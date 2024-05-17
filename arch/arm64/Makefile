@@ -77,7 +77,7 @@ zinstall install: vmlinux
 
 dtbs: scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts dtbs
-	$(Q)$(MAKE) $(build)=$(boot)/dts/talkman dtbs
+	$(Q)$(MAKE) $(build)=$(boot)/dts/lumia dtbs
 
 PHONY += vdso_install
 vdso_install:
