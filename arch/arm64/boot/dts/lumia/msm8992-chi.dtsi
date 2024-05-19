@@ -11,7 +11,7 @@
  */
 
 #include "../qcom/msm8992-pinctrl.dtsi"
-//#include "../qcom/msm8992-camera-sensor-mtp.dtsi"
+#include "../qcom/msm8992-camera-sensor-mtp.dtsi"
 #include "common/regulator.dtsi"
 #include "common/connectivity.dtsi"
 #include "common/sdhc.dtsi"
