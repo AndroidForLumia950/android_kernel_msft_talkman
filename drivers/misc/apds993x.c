@@ -83,6 +83,7 @@
 #define	APDS9931_ID	0x39
 #define	APDS9900_ID	0x29
 #define	APDS9901_ID	0x20
+#define	QPDST900_ID	0xffffff92
 
 #define APDS993X_ENABLE_REG	0x00
 #define APDS993X_ATIME_REG	0x01
@@ -2023,8 +2024,12 @@ static int apds993x_check_chip_id(struct i2c_client *client)
 	case APDS9901_ID:
 		dev_dbg(&client->dev, "APDS9931\n");
 		break;
+	case QPDST900_ID:
+		dev_dbg(&client->dev, "QPDST900\n");
+		break;
 	default:
 		dev_err(&client->dev, "Neither APDS993x nor APDS990x\n");
+		pr_err("Current returned Chip ID is: %x\n", id);
 		return -ENODEV;
 	}
 	return 0;
@@ -2040,32 +2045,50 @@ static int apds993x_init_device(struct i2c_client *client)
 
 	err = apds993x_set_enable(client, 0);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass\n");
 		return err;
+	}
 
 	/* 100.64ms ALS integration time */
 	err = apds993x_set_atime(client,
 			apds993x_als_atime_tb[data->als_atime_index]);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 2\n");
 		return err;
+	}
 
 	/* 2.72ms Prox integration time */
 	err = apds993x_set_ptime(client, 0xFF);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 3\n");
 		return err;
+	}
 
 	/* 2.72ms Wait time */
 	err = apds993x_set_wtime(client, 0xFF);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 4\n");
 		return err;
+	}
 
 	err = apds993x_set_ppcount(client, apds993x_ps_pulse_number);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 5\n");
 		return err;
+	}
 
 	/* no long wait */
 	err = apds993x_set_config(client, 0);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 6\n");
 		return err;
+	}
 
 	err = apds993x_set_control(client,
 			APDS993X_PDRVIE_100MA |
@@ -2073,16 +2096,25 @@ static int apds993x_init_device(struct i2c_client *client)
 			apds993x_ps_pgain |
 			apds993x_als_again_bit_tb[data->als_again_index]);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 7\n");
 		return err;
+	}
 
 	/* init threshold for proximity */
 	err = apds993x_set_pilt(client, 0);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 8\n");
 		return err;
+	}
 
 	err = apds993x_set_piht(client, apds993x_ps_detection_threshold);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass9 \n");
 		return err;
+	}
 
 	/*calirbation*/
 	if (data->platform_data->default_cal) {
@@ -2094,16 +2126,25 @@ static int apds993x_init_device(struct i2c_client *client)
 	/* force first ALS interrupt to get the environment reading */
 	err = apds993x_set_ailt(client, 0xFFFF);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 10\n");
 		return err;
+	}
 
 	err = apds993x_set_aiht(client, 0);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 11\n");
 		return err;
+	}
 
 	/* 2 consecutive Interrupt persistence */
 	err = apds993x_set_pers(client, APDS993X_PPERS_2|APDS993X_APERS_2);
 	if (err < 0)
+	{
+		dev_err(&client->dev, "Error dumbass 12\n");
 		return err;
+	}
 
 	/* sensor is in disabled mode but all the configurations are preset */
 	return 0;

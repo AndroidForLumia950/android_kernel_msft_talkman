@@ -11,6 +11,7 @@
  */
 
 #include "../qcom/msm8994-pinctrl.dtsi"
+#include "common/pinctrl.dtsi"
 #include "../qcom/msm8994-camera-sensor-mtp.dtsi"
 
 #include "common/connectivity.dtsi"
@@ -27,6 +28,10 @@
 #include "common/reserved-memory.dtsi"
 
 #include "panels/dsi-panel-sergej-wqhd-dualdsi-cmd.dtsi"
+
+#include "common/regulator.dtsi"
+#include "common/i2c.dtsi"
+#include "common/sensors.dtsi"
 
 &mdss_mdp {
 	qcom,mdss-pref-prim-intf = "dsi";

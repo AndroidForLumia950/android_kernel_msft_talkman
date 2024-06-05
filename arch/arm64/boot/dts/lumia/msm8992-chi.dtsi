@@ -11,6 +11,7 @@
  */
 
 #include "../qcom/msm8992-pinctrl.dtsi"
+#include "common/pinctrl.dtsi"
 #include "../qcom/msm8992-camera-sensor-mtp.dtsi"
 #include "common/regulator.dtsi"
 #include "common/connectivity.dtsi"
@@ -25,6 +26,9 @@
 #include "common/hdmi.dtsi"
 #include "common/mdss.dtsi"
 #include "common/reserved-memory.dtsi"
+#include "common/i2c.dtsi"
+#include "common/sensors.dtsi"
+
 / {
 	aliases {
 		i2c1 = &i2c_1;

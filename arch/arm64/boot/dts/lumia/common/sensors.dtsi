@@ -1,0 +1,82 @@
+
+
+
+&i2c_5 {
+	status = "okay";
+
+	magnetometer@c {
+		compatible = "asahi-kasei,ak09912";
+		reg = <0xc>;
+		interrupt-parent = <&msm_gpio>;
+		interrupts = <26 0x1>;
+		vdd-supply = <&pm8994_l18>;
+		vid-supply = <&pm8994_lvs2>;
+	};
+
+	mpu6050@68 { /* Gyroscope and accelerometer sensor combo */
+		compatible = "invn,mpu6050";
+		reg = <0x68>;
+		pinctrl-names = "mpu_default","mpu_sleep";
+		pinctrl-0 = <&mpu6050_default>;
+		pinctrl-1 = <&mpu6050_sleep>;
+		interrupt-parent = <&msm_gpio>;
+		interrupts = <64 0x1>;
+		vdd-supply = <&pm8994_l18>;
+		vlogic-supply = <&pm8994_lvs2>;
+		vi2c-supply = <&pm8994_lvs2>;
+		invn,place = "Portrait Down Back Side";
+	};
+
+};
+
+&i2c_7 {
+	status = "okay";
+
+	//sideinteraction: ad7147_captouch@2c {
+	//	compatible = "ad,ad7147_captouch";
+    //
+	//	reg = <0x2c>;
+    //
+	//	pinctrl-names = "default", "sleep";
+	//	pinctrl-0 = <&grip_default>;
+	//	pinctrl-1 = <&grip_sleep>;
+    //
+	//	interrupt-parrent = <&tlmm>;
+	//	interrupts = <96 IRQ_TYPE_EDGE_FALLING>;
+    //
+	//	button_num = <8>;
+	//	touchpad_num = <0>;
+	//	wheel_num = <0>;
+	//	slider_num = <0>;
+    //
+	//	vcc-suply = <&vreg_l18a_2p85>;
+	//};
+
+	/*
+	 * The QPDS-T900/QPDS-T930 is a customized part built for Nokia
+	 * by Avago. It is very similar to the Avago APDS-9930 with some
+	 * minor differences. In the future a proper driver might need to
+	 * be written for this device. For now this works fine.
+	 */
+    avago@39 {
+		compatible = "avago,apds9930";
+		reg = <0x39>;
+		pinctrl-names = "default","sleep";
+		pinctrl-0 = <&apds99xx_default>;
+		pinctrl-1 = <&apds99xx_sleep>;
+		interrupt-parent = <&msm_gpio>;
+		interrupts = <40 0x2>;
+		vdd-supply = <&pm8994_l18>;
+		vio-supply = <&vph_pwr_vreg>;
+		avago,irq-gpio = <&msm_gpio 40 0x2>;
+		avago,ps-threshold = <150>;
+		avago,ps-hysteresis-threshold = <100>;
+		avago,ps-pulse = <8>;
+		avago,ps-pgain = <0>;
+		avago,als-B = <19241>;
+		avago,als-C = <1538>;
+		avago,als-D = <2379>;
+		avago,ga-value = <103142>;
+        avago,cross-talk = <100>;
+	};
+};

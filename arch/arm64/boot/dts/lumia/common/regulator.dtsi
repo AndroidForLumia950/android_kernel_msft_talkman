@@ -380,3 +380,17 @@
 		};
 	};
 };
+
+&soc {
+	/*
+	 * vph_pwr_vreg represents the unregulated battery voltage supply
+	 * VPH_PWR that is present whenever the device is powered on.
+	 */
+	 vph_pwr_vreg: vph_pwr_vreg {
+		compatible = "regulator-fixed";
+		regulator-name = "vph_pwr";
+		status = "ok";
+		regulator-always-on;
+		enable-active-high;
+	};
+};

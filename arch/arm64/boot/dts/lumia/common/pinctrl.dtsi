@@ -1,0 +1,53 @@
+&soc {
+	pinctrl@fd510000 {
+		apds99xx_int_pin {
+			qcom,pins = <&gp 94>;
+			qcom,pin-func = <0>;
+			qcom,num-grp-pins = <1>;
+			label = "apds99xx-irq";
+			apds99xx_default: apds99xx_default {
+				drive-strength = <6>;
+				bias-pull-up;
+			};
+	
+			apds99xx_sleep: apds99xx_sleep {
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+	
+		pmx_i2c_7 {
+			qcom,pins = <&gp 43>, <&gp 44>; /* SDA, SCL */
+			qcom,num-grp-pins = <2>;
+			qcom,pin-func = <3>;
+			label = "pmx_i2c_7";
+	
+			i2c_7_active: i2c_7_active {
+				drive-strength = <2>;
+				bias-disable;
+			};
+	
+			i2c_7_sleep: i2c_7_sleep {
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+	
+		mpu6050_int_pin {
+			/* Gyroscope and accelerometer sensor combo */
+			qcom,pins = <&gp 64>;
+			qcom,pin-func = <0>;
+			qcom,num-grp-pins = <1>;
+			label = "mpu6050-irq";
+			mpu6050_default: mpu6050_default {
+				drive-strength = <6>;
+				bias-pull-down;
+			};
+			mpu6050_sleep: mpu6050_sleep {
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+
+	};
+};
