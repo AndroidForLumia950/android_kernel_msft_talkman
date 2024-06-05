@@ -108,8 +108,8 @@
  * Invalid voltage range for the detection
  * of plug type with current source
  */
-#define WCD9XXX_CS_MEAS_INVALD_RANGE_LOW_MV 230
-#define WCD9XXX_CS_MEAS_INVALD_RANGE_HIGH_MV 265
+#define WCD9XXX_CS_MEAS_INVALD_RANGE_LOW_MV 110
+#define WCD9XXX_CS_MEAS_INVALD_RANGE_HIGH_MV 150
 
 /*
  * Threshold used to detect euro headset
@@ -865,6 +865,9 @@ static void wcd9xxx_insert_detect_setup(struct wcd9xxx_mbhc *mbhc, bool ins)
 static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 				enum snd_jack_types jack_type)
 {
+	struct snd_soc_codec *codec = mbhc->codec;
+	struct msm8994_asoc_mach_data *mach_data = snd_soc_card_get_drvdata(codec->card);
+
 	WCD9XXX_BCL_ASSERT_LOCKED(mbhc->resmgr);
 
 	pr_debug("%s: enter insertion %d hph_status %x\n",
@@ -894,6 +897,8 @@ static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 						mbhc->mbhc_cfg->micbias);
 		}
 		mbhc->zl = mbhc->zr = 0;
+		if (mach_data)
+			mach_data->curr_hs_impedance = 0;
 		mbhc->hph_type = MBHC_HPH_NONE;
 		pr_debug("%s: Reporting removal %d(%x)\n", __func__,
 			 jack_type, mbhc->hph_status);
@@ -998,6 +1003,8 @@ static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 			__wcd9xxx_switch_micbias(mbhc, 1, false,
 						 false);
 		wcd9xxx_clr_and_turnon_hph_padac(mbhc);
+		if (mbhc->vddio_on && mbhc->polling_active)
+			__wcd9xxx_switch_micbias(mbhc, 1, false, false);
 	}
 	/* Setup insert detect */
 	wcd9xxx_insert_detect_setup(mbhc, !insertion);
@@ -3257,7 +3264,7 @@ static void wcd9xxx_correct_swch_plug(struct work_struct *work)
 		} else if (plug_type == PLUG_TYPE_HIGH_HPH) {
 			pr_debug("%s: High HPH detected, continue polling\n",
 				  __func__);
-			pt_high_hph_cnt++;
+/*			pt_high_hph_cnt++;
 			if (pt_high_hph_cnt <= HIGH_HPH_THRESHOLD)
 				continue;
 			WCD9XXX_BCL_LOCK(mbhc->resmgr);
@@ -3269,7 +3276,7 @@ static void wcd9xxx_correct_swch_plug(struct work_struct *work)
 					wcd9xxx_report_plug(mbhc, 1,
 							    SND_JACK_HEADPHONE);
 			}
-			WCD9XXX_BCL_UNLOCK(mbhc->resmgr);
+			WCD9XXX_BCL_UNLOCK(mbhc->resmgr); */
 		} else {
 			if (plug_type == PLUG_TYPE_GND_MIC_SWAP) {
 				pt_gnd_mic_swap_cnt++;
@@ -4661,6 +4668,15 @@ void wcd9xxx_mbhc_stop(struct wcd9xxx_mbhc *mbhc)
 }
 EXPORT_SYMBOL(wcd9xxx_mbhc_stop);
 
+void wcd9xxx_mbhc_enable_vddio(struct wcd9xxx_mbhc *mbhc, bool on)
+{
+	if (mbhc->polling_active)
+		__wcd9xxx_switch_micbias(mbhc, on, false, false);
+	mbhc->vddio_on = on;
+}
+
+EXPORT_SYMBOL(wcd9xxx_mbhc_enable_vddio);
+
 static enum wcd9xxx_micbias_num
 wcd9xxx_event_to_micbias(const enum wcd9xxx_notify_event event)
 {
@@ -5171,6 +5187,7 @@ static int wcd9xxx_detect_impedance(struct wcd9xxx_mbhc *mbhc, uint32_t *zl,
 	u32 zl_diff_1, zl_diff_2;
 	bool override_en;
 	struct snd_soc_codec *codec = mbhc->codec;
+	struct msm8994_asoc_mach_data *mach_data = snd_soc_card_get_drvdata(codec->card);
 	const int mux_wait_us = 25;
 	const struct wcd9xxx_reg_mask_val reg_set_mux[] = {
 		/* Phase 1 */
@@ -5374,6 +5391,19 @@ static int wcd9xxx_detect_impedance(struct wcd9xxx_mbhc *mbhc, uint32_t *zl,
 	/* Undo the micbias disable for override */
 	snd_soc_write(codec, WCD9XXX_A_MAD_ANA_CTRL, micb_mbhc_val);
 
+	if (mbhc->impedance_offset) {
+		if (*zl < mbhc->impedance_offset)
+			*zl = 0;
+		else
+			*zl -= mbhc->impedance_offset;
+		if (*zr < mbhc->impedance_offset)
+			*zr = 0;
+		else
+			*zr -= mbhc->impedance_offset;
+	}
+	if (mach_data)
+		mach_data->curr_hs_impedance = (*zl < *zr) ? *zl : *zr;
+
 	pr_debug("%s: L0: 0x%x(%d), L1: 0x%x(%d), L2: 0x%x(%d)\n",
 		 __func__,
 		 l[0] & 0xffff, l[0], l[1] & 0xffff, l[1], l[2] & 0xffff, l[2]);
@@ -5439,7 +5469,9 @@ int wcd9xxx_mbhc_init(struct wcd9xxx_mbhc *mbhc, struct wcd9xxx_resmgr *resmgr,
 	mbhc->intr_ids = mbhc_cdc_intr_ids;
 	mbhc->impedance_detect = impedance_det_en;
 	mbhc->hph_type = MBHC_HPH_NONE;
-
+	mbhc->impedance_offset = 22000;	/* should come from dev tree, mOhm */
+	mbhc->vddio_on = false;
+	
 	if (mbhc->intr_ids == NULL) {
 		pr_err("%s: Interrupt mapping not provided\n", __func__);
 		return -EINVAL;

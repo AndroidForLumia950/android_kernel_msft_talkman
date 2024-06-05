@@ -7983,6 +7983,14 @@ void tomtom_hs_detect_exit(struct snd_soc_codec *codec)
 }
 EXPORT_SYMBOL(tomtom_hs_detect_exit);
 
+void tomtom_hs_enable_vddio(struct snd_soc_codec *codec, bool on)
+{
+	struct tomtom_priv *tomtom = snd_soc_codec_get_drvdata(codec);
+
+	wcd9xxx_mbhc_enable_vddio(&tomtom->mbhc, on);
+}
+EXPORT_SYMBOL(tomtom_hs_enable_vddio);
+
 void tomtom_event_register(
 	int (*machine_event_cb)(struct snd_soc_codec *codec,
 				enum wcd9xxx_codec_event),
