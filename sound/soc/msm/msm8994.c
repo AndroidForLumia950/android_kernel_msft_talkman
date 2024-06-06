@@ -191,14 +191,6 @@ static struct wcd9xxx_mbhc_config mbhc_cfg = {
 	.use_vddio_meas = true,
 	.enable_anc_mic_detect = false,
 	.hw_jack_type = SIX_POLE_JACK,
-	.key_code[0] = KEY_MEDIA,
-	.key_code[1] = BTN_1,
-	.key_code[2] = BTN_2,
-	.key_code[3] = 0,
-	.key_code[4] = 0,
-	.key_code[5] = 0,
-	.key_code[6] = 0,
-	.key_code[7] = 0,
 };
 
 static struct afe_clk_cfg mi2s_tx_clk = {
@@ -568,7 +560,7 @@ static void msm8994_ext_control(struct snd_soc_codec *codec)
 	struct snd_soc_dapm_context *dapm = &codec->dapm;
 
 	mutex_lock(&dapm->codec->mutex);
-	pr_debug("%s: msm8994_spk_control = %d", __func__, msm8994_spk_control);
+	pr_err("%s: msm8994_spk_control = %d", __func__, msm8994_spk_control);
 	if (msm8994_spk_control == MSM8994_SPK_ON) {
 		snd_soc_dapm_enable_pin(dapm, "Lineout_1 amp");
 		snd_soc_dapm_enable_pin(dapm, "Lineout_2 amp");
@@ -583,7 +575,7 @@ static void msm8994_ext_control(struct snd_soc_codec *codec)
 static int msm8994_get_spk(struct snd_kcontrol *kcontrol,
 		       struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s: msm8994_spk_control = %d\n",
+	pr_err("%s: msm8994_spk_control = %d\n",
 			 __func__, msm8994_spk_control);
 	ucontrol->value.integer.value[0] = msm8994_spk_control;
 	return 0;
@@ -594,7 +586,7 @@ static int msm8994_set_spk(struct snd_kcontrol *kcontrol,
 {
 	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
 
-	pr_debug("%s()\n", __func__);
+	pr_err("%s()\n", __func__);
 	if (msm8994_spk_control == ucontrol->value.integer.value[0])
 		return 0;
 
@@ -628,14 +620,14 @@ static void msm8994_ext_us_amp_enable(u32 on)
 	else
 		gpio_direction_output(ext_us_amp_gpio, 0);
 
-	pr_debug("%s: US Emitter GPIO enable:%s\n", __func__,
+	pr_err("%s: US Emitter GPIO enable:%s\n", __func__,
 			on ? "Enable" : "Disable");
 }
 
 static int msm_ext_ultrasound_event(struct snd_soc_dapm_widget *w,
 			     struct snd_kcontrol *k, int event)
 {
-	pr_debug("%s()\n", __func__);
+	pr_err("%s()\n", __func__);
 	if (!strcmp(w->name, "ultrasound amp")) {
 		if (!gpio_is_valid(ext_us_amp_gpio)) {
 			pr_err("%s: ext_us_amp_gpio isn't configured\n",
@@ -658,7 +650,7 @@ static int msm_snd_enable_codec_ext_clk(struct snd_soc_codec *codec, int enable,
 					bool dapm)
 {
 	int ret = 0;
-	pr_debug("%s: enable = %d clk_users = %d\n",
+	pr_err("%s: enable = %d clk_users = %d\n",
 		__func__, enable, clk_users);
 
 	mutex_lock(&cdc_mclk_mutex);
@@ -702,7 +694,7 @@ exit:
 static int msm8994_mclk_event(struct snd_soc_dapm_widget *w,
 		struct snd_kcontrol *kcontrol, int event)
 {
-	pr_debug("%s: event = %d\n", __func__, event);
+	pr_err("%s: event = %d\n", __func__, event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
@@ -763,7 +755,7 @@ static int slim0_rx_sample_rate_get(struct snd_kcontrol *kcontrol,
 	}
 
 	ucontrol->value.integer.value[0] = sample_rate_val;
-	pr_debug("%s: slim0_rx_sample_rate = %d\n", __func__,
+	pr_err("%s: slim0_rx_sample_rate = %d\n", __func__,
 				slim0_rx_sample_rate);
 
 	return 0;
@@ -772,7 +764,7 @@ static int slim0_rx_sample_rate_get(struct snd_kcontrol *kcontrol,
 static int slim0_rx_sample_rate_put(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s: ucontrol value = %ld\n", __func__,
+	pr_err("%s: ucontrol value = %ld\n", __func__,
 			ucontrol->value.integer.value[0]);
 
 	switch (ucontrol->value.integer.value[0]) {
@@ -787,7 +779,7 @@ static int slim0_rx_sample_rate_put(struct snd_kcontrol *kcontrol,
 		slim0_rx_sample_rate = SAMPLING_RATE_48KHZ;
 	}
 
-	pr_debug("%s: slim0_rx_sample_rate = %d\n", __func__,
+	pr_err("%s: slim0_rx_sample_rate = %d\n", __func__,
 			slim0_rx_sample_rate);
 
 	return 0;
@@ -811,7 +803,7 @@ static int slim0_rx_bit_format_get(struct snd_kcontrol *kcontrol,
 		break;
 	}
 
-	pr_debug("%s: slim0_rx_bit_format = %d, ucontrol value = %ld\n",
+	pr_err("%s: slim0_rx_bit_format = %d, ucontrol value = %ld\n",
 			 __func__, slim0_rx_bit_format,
 			ucontrol->value.integer.value[0]);
 
@@ -839,7 +831,7 @@ static int slim0_rx_bit_format_put(struct snd_kcontrol *kcontrol,
 static int msm_slim_0_rx_ch_get(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s: msm_slim_0_rx_ch  = %d\n", __func__,
+	pr_err("%s: msm_slim_0_rx_ch  = %d\n", __func__,
 		 msm_slim_0_rx_ch);
 	ucontrol->value.integer.value[0] = msm_slim_0_rx_ch - 1;
 	return 0;
@@ -850,7 +842,7 @@ static int msm_slim_0_rx_ch_put(struct snd_kcontrol *kcontrol,
 {
 	msm_slim_0_rx_ch = ucontrol->value.integer.value[0] + 1;
 
-	pr_debug("%s: msm_slim_0_rx_ch = %d\n", __func__,
+	pr_err("%s: msm_slim_0_rx_ch = %d\n", __func__,
 		 msm_slim_0_rx_ch);
 	return 1;
 }
@@ -874,7 +866,7 @@ static int slim0_tx_sample_rate_get(struct snd_kcontrol *kcontrol,
 	}
 
 	ucontrol->value.integer.value[0] = sample_rate_val;
-	pr_debug("%s: slim0_tx_sample_rate = %d\n", __func__,
+	pr_err("%s: slim0_tx_sample_rate = %d\n", __func__,
 				slim0_tx_sample_rate);
 
 	return 0;
@@ -885,7 +877,7 @@ static int slim0_tx_sample_rate_put(struct snd_kcontrol *kcontrol,
 {
 	int rc = 0;
 
-	pr_debug("%s: ucontrol value = %ld\n", __func__,
+	pr_err("%s: ucontrol value = %ld\n", __func__,
 			ucontrol->value.integer.value[0]);
 
 	switch (ucontrol->value.integer.value[0]) {
@@ -904,7 +896,7 @@ static int slim0_tx_sample_rate_put(struct snd_kcontrol *kcontrol,
 		break;
 	}
 
-	pr_debug("%s: slim0_tx_sample_rate = %d\n", __func__,
+	pr_err("%s: slim0_tx_sample_rate = %d\n", __func__,
 			slim0_tx_sample_rate);
 
 	return rc;
@@ -925,7 +917,7 @@ static int slim0_tx_bit_format_get(struct snd_kcontrol *kcontrol,
 		break;
 	}
 
-	pr_debug("%s: slim0_tx_bit_format = %d, ucontrol value = %ld\n",
+	pr_err("%s: slim0_tx_bit_format = %d, ucontrol value = %ld\n",
 			 __func__, slim0_tx_bit_format,
 			ucontrol->value.integer.value[0]);
 
@@ -957,7 +949,7 @@ static int slim0_tx_bit_format_put(struct snd_kcontrol *kcontrol,
 static int msm_slim_0_tx_ch_get(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s: msm_slim_0_tx_ch  = %d\n", __func__,
+	pr_err("%s: msm_slim_0_tx_ch  = %d\n", __func__,
 		 msm_slim_0_tx_ch);
 	ucontrol->value.integer.value[0] = msm_slim_0_tx_ch - 1;
 	return 0;
@@ -968,7 +960,7 @@ static int msm_slim_0_tx_ch_put(struct snd_kcontrol *kcontrol,
 {
 	msm_slim_0_tx_ch = ucontrol->value.integer.value[0] + 1;
 
-	pr_debug("%s: msm_slim_0_tx_ch = %d\n", __func__, msm_slim_0_tx_ch);
+	pr_err("%s: msm_slim_0_tx_ch = %d\n", __func__, msm_slim_0_tx_ch);
 	return 1;
 }
 
@@ -976,7 +968,7 @@ static int msm_vi_feed_tx_ch_get(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
 	ucontrol->value.integer.value[0] = (msm_vi_feed_tx_ch/2 - 1);
-	pr_debug("%s: msm_vi_feed_tx_ch = %ld\n", __func__,
+	pr_err("%s: msm_vi_feed_tx_ch = %ld\n", __func__,
 		 ucontrol->value.integer.value[0]);
 	return 0;
 }
@@ -987,14 +979,14 @@ static int msm_vi_feed_tx_ch_put(struct snd_kcontrol *kcontrol,
 	msm_vi_feed_tx_ch =
 		roundup_pow_of_two(ucontrol->value.integer.value[0] + 2);
 
-	pr_debug("%s: msm_vi_feed_tx_ch = %d\n", __func__, msm_vi_feed_tx_ch);
+	pr_err("%s: msm_vi_feed_tx_ch = %d\n", __func__, msm_vi_feed_tx_ch);
 	return 1;
 }
 
 static int msm_btsco_rate_get(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s: msm_btsco_rate  = %d", __func__, msm_btsco_rate);
+	pr_err("%s: msm_btsco_rate  = %d", __func__, msm_btsco_rate);
 	ucontrol->value.integer.value[0] = msm_btsco_rate;
 	return 0;
 }
@@ -1013,7 +1005,7 @@ static int msm_btsco_rate_put(struct snd_kcontrol *kcontrol,
 		msm_btsco_rate = SAMPLING_RATE_8KHZ;
 		break;
 	}
-	pr_debug("%s: msm_btsco_rate = %d\n", __func__, msm_btsco_rate);
+	pr_err("%s: msm_btsco_rate = %d\n", __func__, msm_btsco_rate);
 	return 0;
 }
 
@@ -1032,7 +1024,7 @@ static int hdmi_rx_bit_format_get(struct snd_kcontrol *kcontrol,
 		break;
 	}
 
-	pr_debug("%s: hdmi_rx_bit_format = %d, ucontrol value = %ld\n",
+	pr_err("%s: hdmi_rx_bit_format = %d, ucontrol value = %ld\n",
 			 __func__, hdmi_rx_bit_format,
 			ucontrol->value.integer.value[0]);
 
@@ -1051,7 +1043,7 @@ static int hdmi_rx_bit_format_put(struct snd_kcontrol *kcontrol,
 		hdmi_rx_bit_format = SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	}
-	pr_debug("%s: hdmi_rx_bit_format = %d, ucontrol value = %ld\n",
+	pr_err("%s: hdmi_rx_bit_format = %d, ucontrol value = %ld\n",
 			 __func__, hdmi_rx_bit_format,
 			ucontrol->value.integer.value[0]);
 	return 0;
@@ -1060,7 +1052,7 @@ static int hdmi_rx_bit_format_put(struct snd_kcontrol *kcontrol,
 static int msm_hdmi_rx_ch_get(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s: msm_hdmi_rx_ch  = %d\n", __func__,
+	pr_err("%s: msm_hdmi_rx_ch  = %d\n", __func__,
 			msm_hdmi_rx_ch);
 	ucontrol->value.integer.value[0] = msm_hdmi_rx_ch - 2;
 
@@ -1076,7 +1068,7 @@ static int msm_hdmi_rx_ch_put(struct snd_kcontrol *kcontrol,
 			__func__, msm_hdmi_rx_ch);
 		msm_hdmi_rx_ch = 8;
 	}
-	pr_debug("%s: msm_hdmi_rx_ch = %d\n", __func__, msm_hdmi_rx_ch);
+	pr_err("%s: msm_hdmi_rx_ch = %d\n", __func__, msm_hdmi_rx_ch);
 
 	return 1;
 }
@@ -1102,7 +1094,7 @@ static int hdmi_rx_sample_rate_get(struct snd_kcontrol *kcontrol,
 	}
 
 	ucontrol->value.integer.value[0] = sample_rate_val;
-	pr_debug("%s: hdmi_rx_sample_rate = %d\n", __func__,
+	pr_err("%s: hdmi_rx_sample_rate = %d\n", __func__,
 				hdmi_rx_sample_rate);
 
 	return 0;
@@ -1111,7 +1103,7 @@ static int hdmi_rx_sample_rate_get(struct snd_kcontrol *kcontrol,
 static int hdmi_rx_sample_rate_put(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s: ucontrol value = %ld\n", __func__,
+	pr_err("%s: ucontrol value = %ld\n", __func__,
 			ucontrol->value.integer.value[0]);
 
 	switch (ucontrol->value.integer.value[0]) {
@@ -1126,7 +1118,7 @@ static int hdmi_rx_sample_rate_put(struct snd_kcontrol *kcontrol,
 		hdmi_rx_sample_rate = SAMPLING_RATE_48KHZ;
 	}
 
-	pr_debug("%s: hdmi_rx_sample_rate = %d\n", __func__,
+	pr_err("%s: hdmi_rx_sample_rate = %d\n", __func__,
 			hdmi_rx_sample_rate);
 
 	return 0;
@@ -1224,7 +1216,7 @@ static int quat_mi2s_sample_rate_put(struct snd_kcontrol *kcontrol,
 		quat_mi2s_sample_rate = SAMPLING_RATE_48KHZ;
 	}
 
-	pr_debug("%s: sample_rate = %d\n", __func__, quat_mi2s_sample_rate);
+	pr_err("%s: sample_rate = %d\n", __func__, quat_mi2s_sample_rate);
 
 	return 0;
 }
@@ -1258,7 +1250,7 @@ static int quat_mi2s_bit_format_put(struct snd_kcontrol *kcontrol,
 		quat_mi2s_bit_format = SNDRV_PCM_FORMAT_S16_LE;
 		break;
 	}
-	pr_debug("%s: bit_format = %d \n", __func__, quat_mi2s_bit_format);
+	pr_err("%s: bit_format = %d \n", __func__, quat_mi2s_bit_format);
 	return 0;
 }
 
@@ -1303,7 +1295,7 @@ static int tert_mi2s_sample_rate_put(struct snd_kcontrol *kcontrol,
 		break;
 	}
 
-	pr_debug("%s: sample_rate = %d\n", __func__, tert_mi2s_sample_rate);
+	pr_err("%s: sample_rate = %d\n", __func__, tert_mi2s_sample_rate);
 
 	return 0;
 }
@@ -1338,14 +1330,14 @@ static int tert_mi2s_bit_format_put(struct snd_kcontrol *kcontrol,
 		break;
 	}
 
-	pr_debug("%s: bit_format = %d \n", __func__, tert_mi2s_bit_format);
+	pr_err("%s: bit_format = %d \n", __func__, tert_mi2s_bit_format);
 	return 0;
 }
 
 static int msm_proxy_rx_ch_get(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s: msm_proxy_rx_ch = %d\n", __func__,
+	pr_err("%s: msm_proxy_rx_ch = %d\n", __func__,
 						msm_proxy_rx_ch);
 	ucontrol->value.integer.value[0] = msm_proxy_rx_ch - 1;
 	return 0;
@@ -1355,7 +1347,7 @@ static int msm_proxy_rx_ch_put(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
 	msm_proxy_rx_ch = ucontrol->value.integer.value[0] + 1;
-	pr_debug("%s: msm_proxy_rx_ch = %d\n", __func__,
+	pr_err("%s: msm_proxy_rx_ch = %d\n", __func__,
 						msm_proxy_rx_ch);
 	return 1;
 }
@@ -1384,7 +1376,7 @@ static int msm_proxy_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels = hw_param_interval(params,
 					SNDRV_PCM_HW_PARAM_CHANNELS);
 
-	pr_debug("%s: msm_proxy_rx_ch =%d\n", __func__, msm_proxy_rx_ch);
+	pr_err("%s: msm_proxy_rx_ch =%d\n", __func__, msm_proxy_rx_ch);
 
 	if (channels->max < 2)
 		channels->min = channels->max = 2;
@@ -1412,7 +1404,7 @@ static int msm8994_hdmi_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels = hw_param_interval(params,
 					SNDRV_PCM_HW_PARAM_CHANNELS);
 
-	pr_debug("%s channels->min %u channels->max %u ()\n", __func__,
+	pr_err("%s channels->min %u channels->max %u ()\n", __func__,
 			channels->min, channels->max);
 
 	param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
@@ -1438,11 +1430,11 @@ static int msm_set_pinctrl(struct msm_pinctrl_info *pinctrl_info,
 	}
 	curr_state = pinctrl_info->curr_state;
 	pinctrl_info->curr_state |= new_state;
-	pr_debug("%s: curr_state = %s new_state = %s\n", __func__,
+	pr_err("%s: curr_state = %s new_state = %s\n", __func__,
 		 pin_states[curr_state], pin_states[pinctrl_info->curr_state]);
 
 	if (curr_state == pinctrl_info->curr_state) {
-		pr_debug("%s: Already in same state\n", __func__);
+		pr_err("%s: Already in same state\n", __func__);
 		goto err;
 	}
 
@@ -1502,11 +1494,11 @@ static int msm_reset_pinctrl(struct msm_pinctrl_info *pinctrl_info,
 	}
 	curr_state = pinctrl_info->curr_state;
 	pinctrl_info->curr_state &= ~(new_state);
-	pr_debug("%s: curr_state = %s new_state = %s\n", __func__,
+	pr_err("%s: curr_state = %s new_state = %s\n", __func__,
 		 pin_states[curr_state], pin_states[pinctrl_info->curr_state]);
 
 	if (curr_state == pinctrl_info->curr_state) {
-		pr_debug("%s: Already in same state\n", __func__);
+		pr_err("%s: Already in same state\n", __func__);
 		goto err;
 	}
 
@@ -1671,7 +1663,7 @@ static int msm_sec_auxpcm_startup(struct snd_pcm_substream *substream)
 	int ret = 0;
 	u32 pcm_sel_reg = 0;
 
-	pr_debug("%s(): substream = %s, sec_auxpcm_rsc_ref counter = %d\n",
+	pr_err("%s(): substream = %s, sec_auxpcm_rsc_ref counter = %d\n",
 		__func__, substream->name, atomic_read(&sec_auxpcm_rsc_ref));
 
 	if (pinctrl_info == NULL) {
@@ -1708,7 +1700,7 @@ static void msm_sec_auxpcm_shutdown(struct snd_pcm_substream *substream)
 	struct msm_pinctrl_info *pinctrl_info = &pdata->pinctrl_info;
 	int ret = 0;
 
-	pr_debug("%s(): substream = %s, sec_auxpcm_rsc_ref counter = %d\n",
+	pr_err("%s(): substream = %s, sec_auxpcm_rsc_ref counter = %d\n",
 		__func__, substream->name, atomic_read(&sec_auxpcm_rsc_ref));
 
 	if (atomic_dec_return(&sec_auxpcm_rsc_ref) == 0) {
@@ -1856,7 +1848,7 @@ static int msm_tx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels = hw_param_interval(params,
 					SNDRV_PCM_HW_PARAM_CHANNELS);
 
-	pr_debug("%s: channel:%d\n", __func__, msm_pri_mi2s_tx_ch);
+	pr_err("%s: channel:%d\n", __func__, msm_pri_mi2s_tx_ch);
 	rate->min = rate->max = SAMPLING_RATE_48KHZ;
 	channels->min = channels->max = msm_pri_mi2s_tx_ch;
 	return 0;
@@ -1873,7 +1865,7 @@ static int msm8994_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	struct msm8994_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 	struct msm_pinctrl_info *pinctrl_info = &pdata->pinctrl_info;
 
-	pr_debug("%s: substream = %s  stream = %d\n", __func__,
+	pr_err("%s: substream = %s  stream = %d\n", __func__,
 		substream->name, substream->stream);
 
 	if (pinctrl_info == NULL) {
@@ -1916,7 +1908,7 @@ static void msm8994_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 	struct msm_pinctrl_info *pinctrl_info = &pdata->pinctrl_info;
 	int ret = 0;
 
-	pr_debug("%s: substream = %s  stream = %d\n", __func__,
+	pr_err("%s: substream = %s  stream = %d\n", __func__,
 		substream->name, substream->stream);
 
 	mi2s_tx_clk.clk_val1 = Q6AFE_LPASS_IBIT_CLK_DISABLE;
@@ -2218,7 +2210,7 @@ static int msm_be_tert_mi2s_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 			   tert_mi2s_bit_format);
 	rate->min = rate->max = tert_mi2s_sample_rate;
 	channels->min = channels->max =2;
-	pr_debug("%s Tertiary MI2S Sample Rate=%d, bit Format=%d \n", __func__,
+	pr_err("%s Tertiary MI2S Sample Rate=%d, bit Format=%d \n", __func__,
 		tert_mi2s_sample_rate, tert_mi2s_bit_format);
 
 	return 0;
@@ -2235,7 +2227,7 @@ static int msm_be_quat_mi2s_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
 			SNDRV_PCM_FORMAT_S24_LE);
 	rate->min = rate->max = quat_mi2s_sample_rate;
-	pr_debug("%s Quat MI2S Sample Rate=%d, bit Format=%d \n", __func__,
+	pr_err("%s Quat MI2S Sample Rate=%d, bit Format=%d \n", __func__,
 		quat_mi2s_sample_rate, quat_mi2s_bit_format);
 
 	return 0;
@@ -2270,13 +2262,13 @@ static int msm_slim_0_rx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels =
 	    hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
 
-	pr_debug("%s()\n", __func__);
+	pr_err("%s()\n", __func__);
 	param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
 				   slim0_rx_bit_format);
 	rate->min = rate->max = slim0_rx_sample_rate;
 	channels->min = channels->max = msm_slim_0_rx_ch;
 
-	 pr_debug("%s: format = %d, rate = %d, channels = %d\n",
+	 pr_err("%s: format = %d, rate = %d, channels = %d\n",
 			  __func__, params_format(params), params_rate(params),
 			  msm_slim_0_rx_ch);
 
@@ -2292,7 +2284,7 @@ static int msm_slim_0_tx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels = hw_param_interval(params,
 			SNDRV_PCM_HW_PARAM_CHANNELS);
 
-	pr_debug("%s()\n", __func__);
+	pr_err("%s()\n", __func__);
 	param_set_mask(params, SNDRV_PCM_HW_PARAM_FORMAT,
 				   slim0_tx_bit_format);
 	rate->min = rate->max = slim0_tx_sample_rate;
@@ -2312,7 +2304,7 @@ static int msm_slim_4_tx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	rate->min = rate->max = 48000;
 	channels->min = channels->max = msm_vi_feed_tx_ch;
-	pr_debug("%s: %d\n", __func__, msm_vi_feed_tx_ch);
+	pr_err("%s: %d\n", __func__, msm_vi_feed_tx_ch);
 	return 0;
 }
 
@@ -2327,7 +2319,7 @@ static int msm_slim_5_tx_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	    hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
 	int rc = 0;
 
-	pr_debug("%s: enter\n", __func__);
+	pr_err("%s: enter\n", __func__);
 	rate->min = rate->max = 16000;
 	channels->min = channels->max = 1;
 
@@ -2349,7 +2341,7 @@ static int msm_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *rate = hw_param_interval(params,
 					SNDRV_PCM_HW_PARAM_RATE);
 
-	pr_debug("%s:\n", __func__);
+	pr_err("%s:\n", __func__);
 	rate->min = rate->max = 48000;
 	return 0;
 }
@@ -2363,7 +2355,7 @@ static int msm_be_fm_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 	struct snd_interval *channels =
 	    hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
 
-	pr_debug("%s:\n", __func__);
+	pr_err("%s:\n", __func__);
 	rate->min = rate->max = 48000;
 	channels->min = channels->max = 2;
 
@@ -2427,7 +2419,7 @@ static bool msm8994_swap_gnd_mic(struct snd_soc_codec *codec)
 	struct snd_soc_card *card = codec->card;
 	struct msm8994_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 	int value = gpio_get_value_cansleep(pdata->us_euro_gpio);
-	pr_debug("%s: swap select switch %d to %d\n", __func__, value, !value);
+	pr_err("%s: swap select switch %d to %d\n", __func__, value, !value);
 	gpio_set_value_cansleep(pdata->us_euro_gpio, !value);
 	return true;
 }
@@ -2437,7 +2429,7 @@ static int msm_afe_set_config(struct snd_soc_codec *codec)
 	int rc;
 	void *config_data;
 
-	pr_debug("%s: enter\n", __func__);
+	pr_err("%s: enter\n", __func__);
 	config_data = tomtom_get_afe_config(codec, AFE_CDC_REGISTERS_CONFIG);
 	rc = afe_set_config(AFE_CDC_REGISTERS_CONFIG, config_data, 0);
 	if (rc) {
@@ -2467,11 +2459,11 @@ static int  msm8994_adsp_state_callback(struct notifier_block *nb,
 		unsigned long value, void *priv)
 {
 	if (value == SUBSYS_BEFORE_SHUTDOWN) {
-		pr_debug("%s: ADSP is about to shutdown. Clearing AFE config\n",
+		pr_err("%s: ADSP is about to shutdown. Clearing AFE config\n",
 			 __func__);
 		msm_afe_clear_config();
 	} else if (value == SUBSYS_AFTER_POWERUP) {
-		pr_debug("%s: ADSP is up\n", __func__);
+		pr_err("%s: ADSP is up\n", __func__);
 	}
 
 	return NOTIFY_OK;
@@ -2495,7 +2487,7 @@ static int msm8994_wcd93xx_codec_up(struct snd_soc_codec *codec)
 		if (!q6core_is_adsp_ready()) {
 			pr_err("%s: ADSP Audio isn't ready\n", __func__);
 		} else {
-			pr_debug("%s: ADSP Audio is ready\n", __func__);
+			pr_err("%s: ADSP Audio is ready\n", __func__);
 			adsp_ready = 1;
 			break;
 		}
@@ -2815,7 +2807,7 @@ static int msm_snd_hw_params(struct snd_pcm_substream *substream,
 	u32 user_set_tx_ch = 0;
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
-		pr_debug("%s: rx_0_ch=%d\n", __func__, msm_slim_0_rx_ch);
+		pr_err("%s: rx_0_ch=%d\n", __func__, msm_slim_0_rx_ch);
 		ret = snd_soc_dai_get_channel_map(codec_dai,
 					&tx_ch_cnt, tx_ch, &rx_ch_cnt , rx_ch);
 		if (ret < 0) {
@@ -2832,7 +2824,7 @@ static int msm_snd_hw_params(struct snd_pcm_substream *substream,
 		}
 	} else {
 
-		pr_debug("%s: %s_tx_dai_id_%d_ch=%d\n", __func__,
+		pr_err("%s: %s_tx_dai_id_%d_ch=%d\n", __func__,
 			 codec_dai->name, codec_dai->id, user_set_tx_ch);
 		ret = snd_soc_dai_get_channel_map(codec_dai,
 					 &tx_ch_cnt, tx_ch, &rx_ch_cnt , rx_ch);
@@ -2858,7 +2850,7 @@ static int msm_snd_hw_params(struct snd_pcm_substream *substream,
 		else
 			user_set_tx_ch = tx_ch_cnt;
 
-		pr_debug(
+		pr_err(
 		"%s: msm_slim_0_tx_ch(%d) user_set_tx_ch(%d) tx_ch_cnt(%d) be_id %d\n",
 			__func__, msm_slim_0_tx_ch, user_set_tx_ch,
 			tx_ch_cnt, dai_link->be_id);
@@ -2893,7 +2885,7 @@ static int msm8994_slimbus_2_hw_params(struct snd_pcm_substream *substream,
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		num_rx_ch =  params_channels(params);
-		pr_debug("%s: %s rx_dai_id = %d  num_ch = %d\n", __func__,
+		pr_err("%s: %s rx_dai_id = %d  num_ch = %d\n", __func__,
 			codec_dai->name, codec_dai->id, num_rx_ch);
 		ret = snd_soc_dai_get_channel_map(codec_dai,
 				&tx_ch_cnt, tx_ch, &rx_ch_cnt , rx_ch);
@@ -2911,7 +2903,7 @@ static int msm8994_slimbus_2_hw_params(struct snd_pcm_substream *substream,
 		}
 	} else {
 		num_tx_ch =  params_channels(params);
-		pr_debug("%s: %s  tx_dai_id = %d  num_ch = %d\n", __func__,
+		pr_err("%s: %s  tx_dai_id = %d  num_ch = %d\n", __func__,
 			codec_dai->name, codec_dai->id, num_tx_ch);
 		ret = snd_soc_dai_get_channel_map(codec_dai,
 				&tx_ch_cnt, tx_ch, &rx_ch_cnt , rx_ch);
@@ -4036,7 +4028,7 @@ static int msm8994_populate_dai_link_component_of_node(
 						"asoc-platform-names",
 						dai_link[i].platform_name);
 			if (index < 0) {
-				pr_debug("%s: No match found for platform name: %s\n",
+				pr_err("%s: No match found for platform name: %s\n",
 					__func__, dai_link[i].platform_name);
 				ret = index;
 				goto err;
@@ -4120,7 +4112,7 @@ static int msm8994_prepare_us_euro(struct snd_soc_card *card)
 	struct msm8994_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 	int ret;
 	if (pdata->us_euro_gpio >= 0) {
-		dev_dbg(card->dev, "%s: us_euro gpio request %d", __func__,
+		dev_err(card->dev, "%s: us_euro gpio request %d", __func__,
 			pdata->us_euro_gpio);
 		ret = gpio_request(pdata->us_euro_gpio, "TOMTOM_CODEC_US_EURO");
 		if (ret) {
@@ -4246,29 +4238,29 @@ static int msm8994_asoc_machine_probe(struct platform_device *pdev)
 	ret = of_property_read_string(pdev->dev.of_node,
 		"qcom,mbhc-audio-jack-type", &mbhc_audio_jack_type);
 	if (ret) {
-		dev_dbg(&pdev->dev, "Looking up %s property in node %s failed",
+		dev_err(&pdev->dev, "Looking up %s property in node %s failed",
 			"qcom,mbhc-audio-jack-type",
 			pdev->dev.of_node->full_name);
 		mbhc_cfg.hw_jack_type = FOUR_POLE_JACK;
 		mbhc_cfg.enable_anc_mic_detect = false;
-		dev_dbg(&pdev->dev, "Jack type properties set to default");
+		dev_err(&pdev->dev, "Jack type properties set to default");
 	} else {
 		if (!strcmp(mbhc_audio_jack_type, "4-pole-jack")) {
 			mbhc_cfg.hw_jack_type = FOUR_POLE_JACK;
 			mbhc_cfg.enable_anc_mic_detect = false;
-			dev_dbg(&pdev->dev, "This hardware has 4 pole jack");
+			dev_err(&pdev->dev, "This hardware has 4 pole jack");
 		} else if (!strcmp(mbhc_audio_jack_type, "5-pole-jack")) {
 			mbhc_cfg.hw_jack_type = FIVE_POLE_JACK;
 			mbhc_cfg.enable_anc_mic_detect = true;
-			dev_dbg(&pdev->dev, "This hardware has 5 pole jack");
+			dev_err(&pdev->dev, "This hardware has 5 pole jack");
 		} else if (!strcmp(mbhc_audio_jack_type, "6-pole-jack")) {
 			mbhc_cfg.hw_jack_type = SIX_POLE_JACK;
 			mbhc_cfg.enable_anc_mic_detect = true;
-			dev_dbg(&pdev->dev, "This hardware has 6 pole jack");
+			dev_err(&pdev->dev, "This hardware has 6 pole jack");
 		} else {
 			mbhc_cfg.hw_jack_type = FOUR_POLE_JACK;
 			mbhc_cfg.enable_anc_mic_detect = false;
-			dev_dbg(&pdev->dev, "Unknown value, set to default");
+			dev_err(&pdev->dev, "Unknown value, set to default");
 		}
 	}
 	/* Parse US-Euro gpio info from DT. Report no error if us-euro
@@ -4282,7 +4274,7 @@ static int msm8994_asoc_machine_probe(struct platform_device *pdev)
 			"qcom,us-euro-gpios",
 			pdev->dev.of_node->full_name);
 	} else {
-		dev_dbg(&pdev->dev, "%s detected %d",
+		dev_err(&pdev->dev, "%s detected %d",
 			"qcom,us-euro-gpios", pdata->us_euro_gpio);
 		mbhc_cfg.swap_gnd_mic = msm8994_swap_gnd_mic;
 	}
@@ -4295,7 +4287,7 @@ static int msm8994_asoc_machine_probe(struct platform_device *pdev)
 	/* Parse pinctrl info from devicetree */
 	ret = msm_get_pinctrl(pdev);
 	if (!ret) {
-		pr_debug("%s: pinctrl parsing successful\n", __func__);
+		pr_err("%s: pinctrl parsing successful\n", __func__);
 	} else {
 		dev_info(&pdev->dev,
 			"%s: Parsing pinctrl failed with %d. Cannot use Ports\n",
@@ -4314,7 +4306,7 @@ static int msm8994_asoc_machine_probe(struct platform_device *pdev)
 #ifdef CONFIG_SND_SOC_TAS2552
 	ret = msm_mi2s_get_pinctrl(pdev, TERT_MI2S_PCM);
 	if (!ret)
-		pr_debug("%s: Tertiary MI2S pinctrl parsing successful\n", __func__);
+		pr_err("%s: Tertiary MI2S pinctrl parsing successful\n", __func__);
 	if (ret) {
 		dev_info(&pdev->dev, "%s: Tertiary MI2S Parsing pinctrl failed with %d.\n",
 			__func__, ret);
@@ -4325,7 +4317,7 @@ static int msm8994_asoc_machine_probe(struct platform_device *pdev)
 #ifdef CONFIG_SND_SOC_ES9018
 	ret = msm_mi2s_get_pinctrl(pdev, QUAT_MI2S_PCM);
 	if (!ret)
-		pr_debug("%s: Quaternary MI2S pinctrl parsing successful\n", __func__);
+		pr_err("%s: Quaternary MI2S pinctrl parsing successful\n", __func__);
 	if (ret) {
 		dev_info(&pdev->dev, "%s: Quaternary MI2S Parsing pinctrl failed with %d.\n",
 			__func__, ret);
@@ -4346,13 +4338,13 @@ err1:
 	msm_release_pinctrl(pdev);
 err:
 	if (pdata->mclk_gpio > 0) {
-		dev_dbg(&pdev->dev, "%s free gpio %d\n",
+		dev_err(&pdev->dev, "%s free gpio %d\n",
 			__func__, pdata->mclk_gpio);
 		gpio_free(pdata->mclk_gpio);
 		pdata->mclk_gpio = 0;
 	}
 	if (pdata->us_euro_gpio > 0) {
-		dev_dbg(&pdev->dev, "%s free us_euro gpio %d\n",
+		dev_err(&pdev->dev, "%s free us_euro gpio %d\n",
 			__func__, pdata->us_euro_gpio);
 		gpio_free(pdata->us_euro_gpio);
 		pdata->us_euro_gpio = 0;

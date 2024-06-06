@@ -478,7 +478,7 @@ struct snd_pcm_substream *snd_soc_get_dai_substream(struct snd_soc_card *card,
 			!strcmp(card->rtd[i].dai_link->name, dai_link))
 			return card->rtd[i].pcm->streams[stream].substream;
 	}
-	dev_dbg(card->dev, "ASoC: failed to find dai link %s\n", dai_link);
+	dev_err(card->dev, "ASoC: failed to find dai link %s\n", dai_link);
 	return NULL;
 }
 EXPORT_SYMBOL_GPL(snd_soc_get_dai_substream);
@@ -492,7 +492,7 @@ struct snd_soc_pcm_runtime *snd_soc_get_pcm_runtime(struct snd_soc_card *card,
 		if (!strcmp(card->rtd[i].dai_link->name, dai_link))
 			return &card->rtd[i];
 	}
-	dev_dbg(card->dev, "ASoC: failed to find rtd %s\n", dai_link);
+	dev_err(card->dev, "ASoC: failed to find rtd %s\n", dai_link);
 	return NULL;
 }
 EXPORT_SYMBOL_GPL(snd_soc_get_pcm_runtime);
@@ -630,7 +630,7 @@ int snd_soc_suspend(struct device *dev)
 				 * otherwise fall through.
 				 */
 				if (codec->dapm.idle_bias_off) {
-					dev_dbg(codec->dev,
+					dev_err(codec->dev,
 						"ASoC: idle_bias_off CODEC on"
 						" over suspend\n");
 					break;
@@ -643,7 +643,7 @@ int snd_soc_suspend(struct device *dev)
 					regcache_mark_dirty(codec->control_data);
 				break;
 			default:
-				dev_dbg(codec->dev, "ASoC: CODEC is on"
+				dev_err(codec->dev, "ASoC: CODEC is on"
 					" over suspend\n");
 				break;
 			}
@@ -681,7 +681,7 @@ static void soc_resume_deferred(struct work_struct *work)
 	 * so userspace apps are blocked from touching us
 	 */
 
-	dev_dbg(card->dev, "ASoC: starting resume work\n");
+	dev_err(card->dev, "ASoC: starting resume work\n");
 
 	/* Bring us up into D2 so that DAPM starts enabling things */
 	snd_power_change_state(card->snd_card, SNDRV_CTL_POWER_D2);
@@ -713,7 +713,7 @@ static void soc_resume_deferred(struct work_struct *work)
 				codec->suspended = 0;
 				break;
 			default:
-				dev_dbg(codec->dev, "ASoC: CODEC was on over"
+				dev_err(codec->dev, "ASoC: CODEC was on over"
 					" suspend\n");
 				break;
 			}
@@ -764,7 +764,7 @@ static void soc_resume_deferred(struct work_struct *work)
 	if (card->resume_post)
 		card->resume_post(card);
 
-	dev_dbg(card->dev, "ASoC: resume work completed\n");
+	dev_err(card->dev, "ASoC: resume work completed\n");
 
 	/* userspace can access us now we are back as we were before */
 	snd_power_change_state(card->snd_card, SNDRV_CTL_POWER_D0);
@@ -796,10 +796,10 @@ int snd_soc_resume(struct device *dev)
 		ac97_control |= cpu_dai->driver->ac97_control;
 	}
 	if (ac97_control) {
-		dev_dbg(dev, "ASoC: Resuming AC97 immediately\n");
+		dev_err(dev, "ASoC: Resuming AC97 immediately\n");
 		soc_resume_deferred(&card->deferred_resume_work);
 	} else {
-		dev_dbg(dev, "ASoC: Scheduling resume work\n");
+		dev_err(dev, "ASoC: Scheduling resume work\n");
 		if (!schedule_work(&card->deferred_resume_work))
 			dev_err(dev, "ASoC: resume work item may be lost\n");
 	}
@@ -824,7 +824,7 @@ static int soc_bind_dai_link(struct snd_soc_card *card, int num)
 	struct snd_soc_dai *codec_dai, *cpu_dai;
 	const char *platform_name;
 
-	dev_dbg(card->dev, "ASoC: binding %s at idx %d\n", dai_link->name, num);
+	dev_err(card->dev, "ASoC: binding %s at idx %d\n", dai_link->name, num);
 
 	/* Find CPU DAI from registered DAIs*/
 	list_for_each_entry(cpu_dai, &dai_list, list) {
@@ -1342,7 +1342,7 @@ static int soc_probe_link_dais(struct snd_soc_card *card, int num, int order)
 	struct snd_soc_dapm_widget *play_w, *capture_w;
 	int ret;
 
-	dev_dbg(card->dev, "ASoC: probe %s dai link %d late %d\n",
+	dev_err(card->dev, "ASoC: probe %s dai link %d late %d\n",
 			card->name, num, order);
 
 	/* config components */
@@ -2017,7 +2017,7 @@ int snd_soc_platform_read(struct snd_soc_platform *platform,
 	}
 
 	ret = platform->driver->read(platform, reg);
-	dev_dbg(platform->dev, "read %x => %x\n", reg, ret);
+	dev_err(platform->dev, "read %x => %x\n", reg, ret);
 	trace_snd_soc_preg_read(platform, reg, ret);
 
 	return ret;
@@ -2032,7 +2032,7 @@ int snd_soc_platform_write(struct snd_soc_platform *platform,
 		return -1;
 	}
 
-	dev_dbg(platform->dev, "write %x = %x\n", reg, val);
+	dev_err(platform->dev, "write %x = %x\n", reg, val);
 	trace_snd_soc_preg_write(platform, reg, val);
 	return platform->driver->write(platform, reg, val);
 }
@@ -2105,7 +2105,7 @@ unsigned int snd_soc_read(struct snd_soc_codec *codec, unsigned int reg)
 
         if (codec->read) {
 		ret = codec->read(codec, reg);
-		dev_dbg(codec->dev, "read %x => %x\n", reg, ret);
+		dev_err(codec->dev, "read %x => %x\n", reg, ret);
 		trace_snd_soc_reg_read(codec, reg, ret);
         }
         else
@@ -2119,7 +2119,7 @@ unsigned int snd_soc_write(struct snd_soc_codec *codec,
 			   unsigned int reg, unsigned int val)
 {
 	if (codec->write) {
-		dev_dbg(codec->dev, "write %x = %x\n", reg, val);
+		dev_err(codec->dev, "write %x = %x\n", reg, val);
 		trace_snd_soc_reg_write(codec, reg, val);
 		return codec->write(codec, reg, val);
         }
@@ -3683,7 +3683,7 @@ int snd_soc_unregister_card(struct snd_soc_card *card)
 {
 	if (card->instantiated)
 		soc_cleanup_card_resources(card);
-	dev_dbg(card->dev, "ASoC: Unregistered card '%s'\n", card->name);
+	dev_err(card->dev, "ASoC: Unregistered card '%s'\n", card->name);
 
 	return 0;
 }
@@ -3759,7 +3759,7 @@ static int snd_soc_register_dai(struct device *dev,
 	struct snd_soc_codec *codec;
 	struct snd_soc_dai *dai;
 
-	dev_dbg(dev, "ASoC: dai register %s\n", dev_name(dev));
+	dev_err(dev, "ASoC: dai register %s\n", dev_name(dev));
 
 	dai = kzalloc(sizeof(struct snd_soc_dai), GFP_KERNEL);
 	if (dai == NULL)
@@ -3782,7 +3782,7 @@ static int snd_soc_register_dai(struct device *dev,
 
 	list_for_each_entry(codec, &codec_list, list) {
 		if (codec->dev == dev) {
-			dev_dbg(dev, "ASoC: Mapped DAI %s to CODEC %s\n",
+			dev_err(dev, "ASoC: Mapped DAI %s to CODEC %s\n",
 				dai->name, codec->name);
 			dai->codec = codec;
 			break;
@@ -3796,7 +3796,7 @@ static int snd_soc_register_dai(struct device *dev,
 
 	mutex_unlock(&client_mutex);
 
-	dev_dbg(dev, "ASoC: Registered DAI '%s'\n", dai->name);
+	dev_err(dev, "ASoC: Registered DAI '%s'\n", dai->name);
 
 	return 0;
 }
@@ -3821,7 +3821,7 @@ found:
 	list_del(&dai->list);
 	mutex_unlock(&client_mutex);
 
-	dev_dbg(dev, "ASoC: Unregistered DAI '%s'\n", dai->name);
+	dev_err(dev, "ASoC: Unregistered DAI '%s'\n", dai->name);
 	kfree(dai->name);
 	kfree(dai);
 }
@@ -3839,7 +3839,7 @@ static int snd_soc_register_dais(struct device *dev,
 	struct snd_soc_dai *dai;
 	int i, ret = 0;
 
-	dev_dbg(dev, "ASoC: dai register %s #%Zu\n", dev_name(dev), count);
+	dev_err(dev, "ASoC: dai register %s #%Zu\n", dev_name(dev), count);
 
 	for (i = 0; i < count; i++) {
 
@@ -3871,7 +3871,7 @@ static int snd_soc_register_dais(struct device *dev,
 
 		list_for_each_entry(codec, &codec_list, list) {
 			if (codec->dev == dev) {
-				dev_dbg(dev, "ASoC: Mapped DAI %s to "
+				dev_err(dev, "ASoC: Mapped DAI %s to "
 					"CODEC %s\n", dai->name, codec->name);
 				dai->codec = codec;
 				break;
@@ -3885,7 +3885,7 @@ static int snd_soc_register_dais(struct device *dev,
 
 		mutex_unlock(&client_mutex);
 
-		dev_dbg(dai->dev, "ASoC: Registered DAI '%s'\n", dai->name);
+		dev_err(dai->dev, "ASoC: Registered DAI '%s'\n", dai->name);
 	}
 
 	return 0;
@@ -3938,7 +3938,7 @@ int snd_soc_add_platform(struct device *dev, struct snd_soc_platform *platform,
 	list_add(&platform->list, &platform_list);
 	mutex_unlock(&client_mutex);
 
-	dev_dbg(dev, "ASoC: Registered platform '%s'\n", platform->name);
+	dev_err(dev, "ASoC: Registered platform '%s'\n", platform->name);
 
 	return 0;
 }
@@ -3955,7 +3955,7 @@ int snd_soc_register_platform(struct device *dev,
 	struct snd_soc_platform *platform;
 	int ret;
 
-	dev_dbg(dev, "ASoC: platform register %s\n", dev_name(dev));
+	dev_err(dev, "ASoC: platform register %s\n", dev_name(dev));
 
 	platform = kzalloc(sizeof(struct snd_soc_platform), GFP_KERNEL);
 	if (platform == NULL)
@@ -3979,7 +3979,7 @@ void snd_soc_remove_platform(struct snd_soc_platform *platform)
 	list_del(&platform->list);
 	mutex_unlock(&client_mutex);
 
-	dev_dbg(platform->dev, "ASoC: Unregistered platform '%s'\n",
+	dev_err(platform->dev, "ASoC: Unregistered platform '%s'\n",
 		platform->name);
 	kfree(platform->name);
 }
@@ -4074,7 +4074,7 @@ int snd_soc_register_codec(struct device *dev,
 	struct snd_soc_codec *codec;
 	int ret, i;
 
-	dev_dbg(dev, "codec register %s\n", dev_name(dev));
+	dev_err(dev, "codec register %s\n", dev_name(dev));
 
 	codec = kzalloc(sizeof(struct snd_soc_codec), GFP_KERNEL);
 	if (codec == NULL)
@@ -4153,7 +4153,7 @@ int snd_soc_register_codec(struct device *dev,
 		goto fail_codec_name;
 	}
 
-	dev_dbg(codec->dev, "ASoC: Registered codec '%s'\n", codec->name);
+	dev_err(codec->dev, "ASoC: Registered codec '%s'\n", codec->name);
 	return 0;
 
 fail_codec_name:
@@ -4190,7 +4190,7 @@ found:
 	list_del(&codec->list);
 	mutex_unlock(&client_mutex);
 
-	dev_dbg(codec->dev, "ASoC: Unregistered codec '%s'\n", codec->name);
+	dev_err(codec->dev, "ASoC: Unregistered codec '%s'\n", codec->name);
 
 	snd_soc_cache_exit(codec);
 	kfree(codec->reg_def_copy);
@@ -4212,7 +4212,7 @@ int snd_soc_register_component(struct device *dev,
 	struct snd_soc_component *cmpnt;
 	int ret;
 
-	dev_dbg(dev, "component register %s\n", dev_name(dev));
+	dev_err(dev, "component register %s\n", dev_name(dev));
 
 	cmpnt = devm_kzalloc(dev, sizeof(*cmpnt), GFP_KERNEL);
 	if (!cmpnt) {
@@ -4248,7 +4248,7 @@ int snd_soc_register_component(struct device *dev,
 	list_add(&cmpnt->list, &component_list);
 	mutex_unlock(&client_mutex);
 
-	dev_dbg(cmpnt->dev, "ASoC: Registered component '%s'\n", cmpnt->name);
+	dev_err(cmpnt->dev, "ASoC: Registered component '%s'\n", cmpnt->name);
 
 	return ret;
 
@@ -4280,7 +4280,7 @@ found:
 	list_del(&cmpnt->list);
 	mutex_unlock(&client_mutex);
 
-	dev_dbg(dev, "ASoC: Unregistered component '%s'\n", cmpnt->name);
+	dev_err(dev, "ASoC: Unregistered component '%s'\n", cmpnt->name);
 	kfree(cmpnt->name);
 }
 EXPORT_SYMBOL_GPL(snd_soc_unregister_component);

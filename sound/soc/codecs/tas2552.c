@@ -122,6 +122,7 @@ static int tas2552_probe(struct snd_soc_codec *codec)
 	int i, ret;
 
 	dev_dbg(codec->dev, "%s: enter\n", __func__);
+	pr_err("TAS2552 entry");
 	tas2552 = kzalloc(sizeof(struct tas2552_priv), GFP_KERNEL);
 	if (tas2552 == NULL) {
 		dev_err(codec->dev, "%s: Failed to alloc tas2552_priv\n", __func__);
@@ -525,6 +526,7 @@ static int tas2552_i2c_probe(struct i2c_client *client,
 				const struct i2c_device_id *id)
 {
 	dev_dbg(&client->dev, "%s: enter\n", __func__);
+	pr_err("tas2552 i2c_probe");
 	return snd_soc_register_codec(&client->dev,
 			&tas2552_drv, &tas2552_dai, 1);
 }
@@ -536,7 +538,7 @@ static int tas2552_i2c_remove(struct i2c_client *client)
 }
 
 static const struct of_device_id tas2552_of_match[] = {
-	{.compatible = "ti, tas2552"},
+	{.compatible = "ti,tas2552"},
 	{ },
 };
 MODULE_DEVICE_TABLE(of, tas2552_of_match);

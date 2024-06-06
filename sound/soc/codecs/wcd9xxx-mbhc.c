@@ -897,8 +897,6 @@ static void wcd9xxx_report_plug(struct wcd9xxx_mbhc *mbhc, int insertion,
 						mbhc->mbhc_cfg->micbias);
 		}
 		mbhc->zl = mbhc->zr = 0;
-		if (mach_data)
-			mach_data->curr_hs_impedance = 0;
 		mbhc->hph_type = MBHC_HPH_NONE;
 		pr_debug("%s: Reporting removal %d(%x)\n", __func__,
 			 jack_type, mbhc->hph_status);
@@ -3264,7 +3262,7 @@ static void wcd9xxx_correct_swch_plug(struct work_struct *work)
 		} else if (plug_type == PLUG_TYPE_HIGH_HPH) {
 			pr_debug("%s: High HPH detected, continue polling\n",
 				  __func__);
-/*			pt_high_hph_cnt++;
+			pt_high_hph_cnt++;
 			if (pt_high_hph_cnt <= HIGH_HPH_THRESHOLD)
 				continue;
 			WCD9XXX_BCL_LOCK(mbhc->resmgr);
@@ -3276,7 +3274,7 @@ static void wcd9xxx_correct_swch_plug(struct work_struct *work)
 					wcd9xxx_report_plug(mbhc, 1,
 							    SND_JACK_HEADPHONE);
 			}
-			WCD9XXX_BCL_UNLOCK(mbhc->resmgr); */
+			WCD9XXX_BCL_UNLOCK(mbhc->resmgr);
 		} else {
 			if (plug_type == PLUG_TYPE_GND_MIC_SWAP) {
 				pt_gnd_mic_swap_cnt++;
@@ -5391,19 +5389,6 @@ static int wcd9xxx_detect_impedance(struct wcd9xxx_mbhc *mbhc, uint32_t *zl,
 	/* Undo the micbias disable for override */
 	snd_soc_write(codec, WCD9XXX_A_MAD_ANA_CTRL, micb_mbhc_val);
 
-	if (mbhc->impedance_offset) {
-		if (*zl < mbhc->impedance_offset)
-			*zl = 0;
-		else
-			*zl -= mbhc->impedance_offset;
-		if (*zr < mbhc->impedance_offset)
-			*zr = 0;
-		else
-			*zr -= mbhc->impedance_offset;
-	}
-	if (mach_data)
-		mach_data->curr_hs_impedance = (*zl < *zr) ? *zl : *zr;
-
 	pr_debug("%s: L0: 0x%x(%d), L1: 0x%x(%d), L2: 0x%x(%d)\n",
 		 __func__,
 		 l[0] & 0xffff, l[0], l[1] & 0xffff, l[1], l[2] & 0xffff, l[2]);
@@ -5469,7 +5454,6 @@ int wcd9xxx_mbhc_init(struct wcd9xxx_mbhc *mbhc, struct wcd9xxx_resmgr *resmgr,
 	mbhc->intr_ids = mbhc_cdc_intr_ids;
 	mbhc->impedance_detect = impedance_det_en;
 	mbhc->hph_type = MBHC_HPH_NONE;
-	mbhc->impedance_offset = 22000;	/* should come from dev tree, mOhm */
 	mbhc->vddio_on = false;
 	
 	if (mbhc->intr_ids == NULL) {
