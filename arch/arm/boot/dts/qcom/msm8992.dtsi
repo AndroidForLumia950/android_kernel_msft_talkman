@@ -1083,7 +1083,7 @@
 		qcom,ep-latency = <10>;
 		//qcom,vbg-opt;
 
-		qcom,ep-wakeirq;
+		//qcom,ep-wakeirq;
 
 		qcom,msi-gicm-addr = <0xf9006040>;
 		qcom,msi-gicm-base = <0x180>;
@@ -1113,7 +1113,7 @@
 		max-clock-frequency-hz = <125000000>, <0>, <1011000>, <0>, <0>, <0>, <0>, <0>;
 	};
 
-	qcom,cnss {
+	cnss: qcom,cnss {
 		compatible = "qcom,cnss";
 		wlan-bootstrap-gpio = <&msm_gpio 111 0>,
 				      <&msm_gpio 112 0>,
