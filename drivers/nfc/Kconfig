@@ -48,6 +48,16 @@ config NFC_MEI_PHY
 
 	  If unsure, say N.
 
+config NFC_PN547
+	tristate "NFC driver for PN547"
+	depends on I2C
+	default n
+	help
+	  This option enables device driver for PN547.
+	  GPIO, and PMIC GPIO configurations are controlled.
+	  The sysfs files provides the interface to send and receive
+	  the data, response and notification.
+
 source "drivers/nfc/pn544/Kconfig"
 source "drivers/nfc/microread/Kconfig"
 

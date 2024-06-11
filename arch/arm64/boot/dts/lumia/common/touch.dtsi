@@ -10,8 +10,10 @@
  * GNU General Public License for more details.
  */
 
-&soc {
+ &soc {
 	i2c@f9923000 {
+		status = "ok"; // enable on 950XL
+
     	qcom,clk-freq-out = <400000>;
     	qcom,disable-dma;
     	synaptics@4b {

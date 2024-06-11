@@ -10,7 +10,7 @@
  * GNU General Public License for more details.
  */
 
-&pmi8994_fg {
+ &pmi8994_fg {
 	status = "ok";
 	qcom,hold-soc-while-full;
 	qcom,charger = <&pmi8994_charger>;
@@ -49,18 +49,4 @@
 	qcom,customized-jeita;
 	/delete-property/ qcom,thermal-mitigation;
 	qcom,ibat-thermal-mitigation = <1400 1200 600 1200 300 1200 100 600 0 0>;
-};
-
-&i2c_6 {
-	status = "ok";
-	smb1358-charger {
-		status = "ok";
-		compatible = "qcom,smb1358-charger";
-		reg = <0x1c>;
-		qcom,parallel-charger;
-		qcom,iterm-ma = <100>;
-		qcom,float-voltage-mv = <4460>;
-		qcom,recharge-thresh-mv = <100>;
-		qcom,charging-timeout-mins = <768>;
-	};
 };

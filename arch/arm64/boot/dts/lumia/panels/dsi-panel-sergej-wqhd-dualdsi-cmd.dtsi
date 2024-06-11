@@ -16,8 +16,8 @@
  * VERSION = "1.0"
  *---------------------------------------------------------------------------*/
 &mdss_mdp {
-	dsi_duke_wqhd_dsi0_cmd: qcom,mdss_dsi_duke_wqhd_dsi0_cmd {
-		qcom,mdss-dsi-panel-name = "Duke 1440p DSI0 cmd mode panel";
+	dsi_sergej_wqhd_dsi0_cmd: qcom,mdss_dsi_sergej_wqhd_dsi0_cmd {
+		qcom,mdss-dsi-panel-name = "Sergej 1440p Dual 0 cmd mode dsi panel";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi0>;
 		qcom,mdss-dsi-panel-type = "dsi_cmd_mode";
 		qcom,mdss-dsi-panel-destination = "display_1";
@@ -60,8 +60,8 @@
 		qcom,mdss-dsi-t-clk-post = <0x5>;
 		qcom,mdss-dsi-t-clk-pre = <0x5e>;
 
-		qcom,mdss-dsi-bl-min-level = <0x1>;
-		qcom,mdss-dsi-bl-max-level = <0x80>;
+		qcom,mdss-dsi-bl-min-level = <1>;
+		qcom,mdss-dsi-bl-max-level = <128>;
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
@@ -73,19 +73,18 @@
 		qcom,mdss-dsi-te-check-enable;
 		qcom,mdss-dsi-te-using-te-pin;
 		qcom,mdss-dsi-on-command = [
-			/* exit_sleep_mode, wait 120ms */
-	   		05 01 00 00 78 00 02 11 00 
-			/* duke_unlock_level */
-	   		39 01 00 00 00 00 03 F0 5A 5A 
-       		39 01 00 00 00 00 04 BD 05 02 16 
-			/* page select?*/
-       		15 01 00 00 00 00 02 FF 02	
-			/* duke_lock_level */
-       		39 01 00 00 00 00 03 F0 A5 A5 
+			/* exit_sleep_mode, wait 5ms */
+			05 01 00 00 05 00 02 11 00
+			/* sergej_unlock_level */
+	   		39 01 00 00 00 00 03 F0 5A 5A
+       		15 01 00 00 00 00 02 F2 63
+       		39 01 00 00 00 00 07 BD 11 01 02 16 02 16
+			/* sergej_lock_level */
+       		39 01 00 00 17 00 03 F0 A5 A5
 			/* write ctrl display */
-       		15 01 00 00 00 00 02 53 20 
+       		15 01 00 00 00 00 02 53 20
 			/* write display brightness */
-       		15 01 00 00 00 00 02 51 80 
+       		15 01 00 00 00 00 02 51 80
 			/* set tear on */
        		15 01 00 00 00 00 02 35 00
 			/* set_display_on */
@@ -97,15 +96,15 @@
 			/* set_display_off */
 			05 01 00 00 21 00 02 28 00
 			/* set_idle_on */
-       		05 01 00 00 00 00 02 10 00
+       		05 01 00 00 78 00 02 10 00
 			];
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-pan-physical-width-dimension = <65>;
 		qcom,mdss-pan-physical-height-dimension = <115>;
 	};
 	
-	dsi_duke_wqhd_dsi1_cmd: qcom,mdss_dsi_duke_wqhd_dsi1_cmd {
-		qcom,mdss-dsi-panel-name = "Duke 1440p DSI1 cmd mode panel";
+	dsi_sergej_wqhd_dsi1_cmd: qcom,mdss_dsi_sergej_wqhd_dsi1_cmd {
+		qcom,mdss-dsi-panel-name = "Sergej 1440p Dual 1 cmd mode dsi panel";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi1>;
 		qcom,mdss-dsi-panel-type = "dsi_cmd_mode";
 		qcom,mdss-dsi-panel-destination = "display_2";
@@ -149,10 +148,10 @@
 		qcom,mdss-dsi-t-clk-post = <0x5>;
 		qcom,mdss-dsi-t-clk-pre = <0x5e>;
 
-		qcom,mdss-dsi-bl-min-level = <0x1>;
-		qcom,mdss-dsi-bl-max-level = <0x80>;
+		qcom,mdss-dsi-bl-min-level = <1>;
+		qcom,mdss-dsi-bl-max-level = <128>;
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
-		
+
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
 		qcom,mdss-dsi-mdp-trigger = "none";
 		qcom,mdss-dsi-te-pin-select = <1>;
@@ -162,31 +161,30 @@
 		qcom,mdss-dsi-te-check-enable;
 		qcom,mdss-dsi-te-using-te-pin;
 		qcom,mdss-dsi-on-command = [
-			/* exit_sleep_mode, wait 120ms */
-	   		05 01 00 00 78 00 02 11 00 
-			/* duke_unlock_level */
-	   		39 01 00 00 00 00 03 F0 5A 5A 
-       		39 01 00 00 00 00 04 BD 05 02 16 
-			/* page select?*/
-       		15 01 00 00 00 00 02 FF 02	
-			/* duke_lock_level */
-       		39 01 00 00 00 00 03 F0 A5 A5 
+			/* exit_sleep_mode, wait 5ms */
+			05 01 00 00 05 00 02 11 00
+			/* sergej_unlock_level */
+	   		39 01 00 00 00 00 03 F0 5A 5A
+       		15 01 00 00 00 00 02 F2 63
+       		39 01 00 00 00 00 07 BD 11 01 02 16 02 16
+			/* sergej_lock_level */
+       		39 01 00 00 17 00 03 F0 A5 A5
 			/* write ctrl display */
-       		15 01 00 00 00 00 02 53 20 
+       		15 01 00 00 00 00 02 53 20
 			/* write display brightness */
-       		15 01 00 00 00 00 02 51 80 
+       		15 01 00 00 00 00 02 51 80
 			/* set tear on */
        		15 01 00 00 00 00 02 35 00
 			/* set_display_on */
        		05 01 00 00 00 00 02 29 00
 			];
-
+			
 		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-off-command = [
 			/* set_display_off */
 			05 01 00 00 21 00 02 28 00
 			/* set_idle_on */
-       		05 01 00 00 00 00 02 10 00
+       		05 01 00 00 78 00 02 10 00
 			];
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-pan-physical-width-dimension = <65>;
