@@ -15,10 +15,10 @@
 #define MSM_MSM8994_H
 
 enum pinctrl_pin_state {
-	STATE_DISABLE = 0,
-	STATE_AUXPCM_ACTIVE,
-	STATE_MI2S_ACTIVE,
-	STATE_ACTIVE
+	STATE_DISABLE = 0,   /* All pins are in sleep state */
+	STATE_AUXPCM_ACTIVE, /* Aux PCM = active, MI2S = sleep */
+	STATE_MI2S_ACTIVE,   /* Aux PCM = sleep, MI2S = active */
+	STATE_ACTIVE         /* All pins are in active state */
 };
 
 struct msm_pinctrl_info {

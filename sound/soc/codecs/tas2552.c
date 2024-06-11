@@ -59,7 +59,7 @@ static int tas2552_set_pll_clk(struct snd_soc_codec *codec,
 	unsigned int target_clk;
 	unsigned int value = 0;
 
-	dev_dbg(codec->dev, "%s: sysclk %d, sample rate %d\n", __func__,
+	dev_err(codec->dev, "%s: sysclk %d, sample rate %d\n", __func__,
 		tas2552->sysclk, sample_rate);
 	target_clk = (sample_rate == 48000) ?
 			TAS2552_PLL_CLK_48000 : TAS2552_PLL_CLK_44100;
@@ -95,7 +95,7 @@ static int tas2552_set_pll_clk(struct snd_soc_codec *codec,
 			return -EINVAL;
 		}
 
-		dev_dbg(codec->dev, "%s: J=%d, P=%d, D=%d\n", __func__, j, p, d);
+		dev_err(codec->dev, "%s: J=%d, P=%d, D=%d\n", __func__, j, p, d);
 
 		snd_soc_update_bits(codec, TAS2552_REG_PLLCTRL2,
 			TAS2552_PLLCTRL2_BYPASS_MSK, 0);
@@ -121,7 +121,7 @@ static int tas2552_probe(struct snd_soc_codec *codec)
 	struct tas2552_priv *tas2552;
 	int i, ret;
 
-	dev_dbg(codec->dev, "%s: enter\n", __func__);
+	dev_err(codec->dev, "%s: enter\n", __func__);
 	pr_err("TAS2552 entry");
 	tas2552 = kzalloc(sizeof(struct tas2552_priv), GFP_KERNEL);
 	if (tas2552 == NULL) {
@@ -181,7 +181,7 @@ static int tas2552_remove(struct snd_soc_codec *codec)
 static int tas2552_set_bias_level(struct snd_soc_codec *codec,
 				  enum snd_soc_bias_level level)
 {
-	dev_dbg(codec->dev, "%s: level %d\n", __func__, level);
+	dev_err(codec->dev, "%s: level %d\n", __func__, level);
 	switch (level) {
 	case SND_SOC_BIAS_ON:
 		snd_soc_update_bits(codec, TAS2552_REG_CONFIG1,
@@ -311,7 +311,7 @@ static int tas2552_set_sysclk(struct snd_soc_dai *codec_dai,
 	struct tas2552_priv *tas2552 = snd_soc_codec_get_drvdata(codec);
 	unsigned int value = 0;
 
-	dev_dbg(codec->dev, "%s: clk_id %d, freq %d\n", __func__,
+	dev_err(codec->dev, "%s: clk_id %d, freq %d\n", __func__,
 		clk_id, freq);
 	switch (clk_id) {
 	case TAS2552_SCLK_S_MCLK:
@@ -343,7 +343,7 @@ static int tas2552_set_format(struct snd_soc_dai *codec_dai, unsigned int fmt)
 	struct snd_soc_codec *codec = codec_dai->codec;
 	unsigned int value = 0;
 
-	dev_dbg(codec->dev, "%s: fmt 0x%x\n", __func__, fmt);
+	dev_err(codec->dev, "%s: fmt 0x%x\n", __func__, fmt);
 	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
 	case SND_SOC_DAIFMT_I2S:
 		value |= TAS2552_I2SCTRL1_PCM_DATAFMT_I2S;
@@ -407,14 +407,14 @@ static int tas2552_digital_mute(struct snd_soc_dai *dai, int mute)
 {
 	struct snd_soc_codec *codec = dai->codec;
 
-	dev_dbg(codec->dev, "%s: mute %d\n", __func__, mute);
+	dev_err(codec->dev, "%s: mute %d\n", __func__, mute);
 	snd_soc_update_bits(codec, TAS2552_REG_CONFIG1,
 			TAS2552_CONFIG1_MUTE_MSK,
 			mute ? TAS2552_CONFIG1_MUTE : 0);
 
 	if (!mute) {
 		usleep(10000);
-		dev_dbg(codec->dev, "unmute, set source selete to mix\n");
+		dev_err(codec->dev, "unmute, set source selete to mix\n");
 		snd_soc_update_bits(codec, TAS2552_REG_CONFIG3,
 				TAS2552_CONFIG3_SOURCE_SELECT_MSK,
 				TAS2552_CONFIG3_SOURCE_SELECT_MONO);
@@ -430,7 +430,7 @@ static int tas2552_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_codec *codec = dai->codec;
 	unsigned int value = 0;
 
-	dev_dbg(codec->dev, "%s: fmt %d, rate %d\n", __func__,
+	dev_err(codec->dev, "%s: fmt %d, rate %d\n", __func__,
 		params_format(params), params_rate(params));
 	switch (params_format(params)) {
 	case SNDRV_PCM_FORMAT_S16_LE:
@@ -476,7 +476,7 @@ static int tas2552_startup(struct snd_pcm_substream *substream,
 	struct snd_soc_codec *codec = dai->codec;
 	struct snd_soc_dapm_context *dapm = &codec->dapm;
 
-	dev_dbg(codec->dev, "%s: enter\n", __func__);
+	dev_err(codec->dev, "%s: enter\n", __func__);
 	snd_soc_dapm_enable_pin(dapm, "Int Spk");
 	return 0;
 }
@@ -487,7 +487,7 @@ static void tas2552_shutdown(struct snd_pcm_substream *substream,
 	struct snd_soc_codec *codec = dai->codec;
 	struct snd_soc_dapm_context *dapm = &codec->dapm;
 
-	dev_dbg(codec->dev, "%s: enter\n", __func__);
+	dev_err(codec->dev, "%s: enter\n", __func__);
 	snd_soc_dapm_disable_pin(dapm, "Int Spk");
 }
 
@@ -525,7 +525,7 @@ static struct snd_soc_dai_driver tas2552_dai = {
 static int tas2552_i2c_probe(struct i2c_client *client,
 				const struct i2c_device_id *id)
 {
-	dev_dbg(&client->dev, "%s: enter\n", __func__);
+	dev_err(&client->dev, "%s: enter\n", __func__);
 	pr_err("tas2552 i2c_probe");
 	return snd_soc_register_codec(&client->dev,
 			&tas2552_drv, &tas2552_dai, 1);

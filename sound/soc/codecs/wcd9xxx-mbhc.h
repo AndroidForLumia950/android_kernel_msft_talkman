@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -275,6 +275,7 @@ struct wcd9xxx_mbhc_config {
 	bool use_vddio_meas;
 	bool enable_anc_mic_detect;
 	enum hw_jack_type hw_jack_type;
+	int key_code[8];
 };
 
 struct wcd9xxx_cfilt_mode {
@@ -392,6 +393,7 @@ struct wcd9xxx_mbhc {
 	bool impedance_detect;
 	/* impedance of hphl and hphr */
 	uint32_t zl, zr;
+	uint32_t impedance_offset;
 
 	u32 rco_clk_rate;
 
@@ -413,9 +415,8 @@ struct wcd9xxx_mbhc {
 #endif
 
 	struct mutex mbhc_lock;
-	bool vddio_on;
 
-	bool force_linein;
+	bool vddio_on;
 };
 
 #define WCD9XXX_MBHC_CAL_SIZE(buttons, rload) ( \
@@ -473,6 +474,7 @@ struct wcd9xxx_mbhc {
 	    (cfg_ptr->_n_rload * \
 	     (sizeof(cfg_ptr->_rload[0]) + sizeof(cfg_ptr->_alpha[0]))))
 
+int wcd9xxx_mbhc_set_keycode(struct wcd9xxx_mbhc *mbhc);
 int wcd9xxx_mbhc_start(struct wcd9xxx_mbhc *mbhc,
 		       struct wcd9xxx_mbhc_config *mbhc_cfg);
 void wcd9xxx_mbhc_stop(struct wcd9xxx_mbhc *mbhc);

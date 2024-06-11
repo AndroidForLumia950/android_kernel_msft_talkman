@@ -742,7 +742,6 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 					app_type_cfg[app_type_idx].bit_width;
 			} else
 				sample_rate = msm_bedais[i].sample_rate;
-			sample_rate = msm_bedais[i].sample_rate;
 
 			acdb_dev_id = fe_dai_app_type_cfg[fedai_id].acdb_dev_id;
 			topology = msm_routing_get_adm_topology(path_type,
@@ -956,7 +955,6 @@ static void msm_pcm_routing_process_audio(u16 reg, u16 val, int set)
 					app_type_cfg[app_type_idx].bit_width;
 			} else
 				sample_rate = msm_bedais[reg].sample_rate;
-			sample_rate = msm_bedais[reg].sample_rate;
 
 			topology = msm_routing_get_adm_topology(path_type, val);
 			acdb_dev_id = fe_dai_app_type_cfg[val].acdb_dev_id;
@@ -4359,7 +4357,7 @@ static const struct snd_soc_dapm_widget msm_qdsp6_widgets[] = {
 		0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_IN("DTMF_DL_HL", "DTMF_RX_HOSTLESS Playback",
 		0, 0, 0, 0),
-	SND_SOC_DAPM_AIF_OUT("QUAT_MI2S_UL_HL", "QUAT_MI2S_HOSTLESS Capture",
+	SND_SOC_DAPM_AIF_OUT("QUAT_MI2S_UL_HL", "Quaternary MI2S_TX Hostless Capture",
 		0, 0, 0, 0),
 	SND_SOC_DAPM_AIF_OUT("TERT_MI2S_UL_HL", "TERT_MI2S Hostless Capture",
 		0, 0, 0, 0),
@@ -5820,7 +5818,6 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 					app_type_cfg[app_type_idx].bit_width;
 			} else
 				sample_rate = bedai->sample_rate;
-			sample_rate = bedai->sample_rate;
 			channels = bedai->channel;
 			acdb_dev_id = fe_dai_app_type_cfg[i].acdb_dev_id;
 			topology = msm_routing_get_adm_topology(path_type, i);

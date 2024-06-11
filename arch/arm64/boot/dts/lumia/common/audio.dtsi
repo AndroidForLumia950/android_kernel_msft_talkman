@@ -21,14 +21,14 @@
 			"MADINPUT", "MCLK",
 			"ultrasound amp", "LINEOUT1",
 			"ultrasound amp", "LINEOUT3",
-			"AMIC1", "MIC BIAS1 External",
-			"MIC BIAS1 External", "Handset Mic",
+			"AMIC1", "MIC BIAS1 Internal1",
+			"MIC BIAS1 Internal1", "Handset Mic",
 			"AMIC2", "MIC BIAS2 External",
 			"MIC BIAS2 External", "Headset Mic",
-			"AMIC3", "MIC BIAS4 External",
-			"MIC BIAS4 External", "Analog Mic3",
-			"AMIC4", "MIC BIAS4 External",
-			"MIC BIAS4 External", "Analog Mic4",
+			"AMIC3", "MIC BIAS2 External",
+			"MIC BIAS2 External", "ANCRight Headset Mic",
+			"AMIC4", "MIC BIAS2 External",
+			"MIC BIAS2 External", "ANCLeft Headset Mic",
 			"AMIC5", "MIC BIAS3 External",
 			"MIC BIAS3 External", "Analog Mic5",
 			"AMIC6", "MIC BIAS4 External",
@@ -49,7 +49,7 @@
 		qcom,cdc-micbias2-headset-only;
 		qcom,mbhc-audio-jack-type = "4-pole-jack";
 		asoc-codec = <&stub_codec>;
-		asoc-codec-names = "tas2552.10-0040";
+		asoc-codec-names = "msm-stub-codec.1";
 	};
 };
 
