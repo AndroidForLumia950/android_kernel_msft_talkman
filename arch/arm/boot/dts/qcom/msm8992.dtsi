@@ -204,19 +204,19 @@
 			next-level-cache = <&L2_1>;
 			// The currents(uA) correspond to the frequencies in the
 			// frequency table.
-			current = < 67740 //384000 kHZ
-			            82960 //480000 kHZ
-			            105870 //633600 kHZ
-			            133160 //768000 kHZ
+			current = < 55000 //384000 kHZ
+			            77000 //480000 kHZ
+			            97000 //633600 kHZ
+			            125000 //768000 kHZ
 			            150160 //864000 kHZ
 			            167180 //960000 kHZ
 			            230040 //1248000 kHZ
-			            261430 //1344000 kHZ
-			            290460 //1440000 kHZ
-			            317200 //1536000 kHZ
-			            352870 //1632000 kHZ
-			            374360 //1689600 kHZ
-			            443880>; //1824000 kHZ
+			            255000 //1344000 kHZ
+			            280000 //1440000 kHZ
+			            307000 //1536000 kHZ
+			            343000 //1632000 kHZ
+			            365000 //1689600 kHZ
+			            420000>; //1824000 kHZ
 			L2_1: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -243,19 +243,19 @@
 			next-level-cache = <&L2_1>;
 			// The currents(uA) correspond to the frequencies in the
 			// frequency table.
-			current = < 49450 //384000 kHZ
-			            60561 //480000 kHZ
-			            77285 //633600 kHZ
-			            97207 //768000 kHZ
-			            109617 //864000 kHZ
-			            122041 //960000 kHZ
-			            167929 //1248000 kHZ
-			            190844 //1344000 kHZ
-			            212036 //1440000 kHZ
-			            231556 //1536000 kHZ
-			            257595 //1632000 kHZ
-			            273283 //1689600 kHZ
-			            324032>; //1824000 kHZ
+			current = < 40000 //384000 kHZ
+			            50000 //480000 kHZ
+			            69000 //633600 kHZ
+			            87000 //768000 kHZ
+			            99000 //864000 kHZ
+			            112000 //960000 kHZ
+			            150000 //1248000 kHZ
+			            179000 //1344000 kHZ
+			            200000 //1440000 kHZ
+			            220000 //1536000 kHZ
+			            239000 //1632000 kHZ
+			            250000 //1689600 kHZ
+			            310000>; //1824000 kHZ
 			L1_I_101: l1-icache {
 				compatible = "arm,arch-cache";
 				qcom,dump-size = <0xd840>;
