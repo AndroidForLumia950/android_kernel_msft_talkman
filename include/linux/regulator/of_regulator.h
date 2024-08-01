@@ -5,6 +5,10 @@
 
 #ifndef __LINUX_OF_REG_H
 #define __LINUX_OF_REG_H
+#include <linux/device.h>  // Ensure struct device is defined
+#include <linux/of.h>      // Other necessary headers
+
+struct regulator_init_data;  // Forward declaration if needed
 
 struct of_regulator_match {
 	const char *name;
