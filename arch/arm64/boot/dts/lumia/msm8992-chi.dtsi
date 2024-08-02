@@ -107,12 +107,13 @@
  #include "panels/dsi-panel-sergej-wqhd-dualdsi-cmd.dtsi"
  
  //Sergej panel has more timout for cmds -- fixing a green line on screen when powering off bug
- &mdss_dsi0 {
-	 qcom,dsi-pref-prim-pan = <&dsi_sergej_wqhd_dsi0_cmd>;
+ //Won't use it though, will just have to adjust the timing later down the line 
+&mdss_dsi0 {
+	 qcom,dsi-pref-prim-pan = <&dsi_duke_wqhd_dsi0_cmd>;
  };
  
  &mdss_dsi1 {
-	 qcom,dsi-pref-prim-pan = <&dsi_sergej_wqhd_dsi1_cmd>;
+	 qcom,dsi-pref-prim-pan = <&dsi_duke_wqhd_dsi1_cmd>;
  };
  
  &usb3 {
