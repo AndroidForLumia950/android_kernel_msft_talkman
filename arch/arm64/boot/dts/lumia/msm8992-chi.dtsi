@@ -104,7 +104,7 @@
  
  };
  
- #include "panels/dsi-panel-sergej-wqhd-dualdsi-cmd.dtsi"
+ #include "panels/dsi-panel-duke-wqhd-dualdsi-cmd.dtsi"
  
  //Sergej panel has more timout for cmds -- fixing a green line on screen when powering off bug
  //Won't use it though, will just have to adjust the timing later down the line 
