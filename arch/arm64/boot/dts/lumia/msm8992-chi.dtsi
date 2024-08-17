@@ -26,8 +26,6 @@
  #include "common/hdmi.dtsi"
  #include "common/mdss.dtsi"
  #include "common/reserved-memory.dtsi"
- #include "common/i2c.dtsi"
- #include "common/sensors.dtsi"
  
  / {
 	 aliases {
