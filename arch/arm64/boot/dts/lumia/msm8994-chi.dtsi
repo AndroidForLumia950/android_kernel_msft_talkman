@@ -30,8 +30,6 @@
  #include "panels/dsi-panel-duke-wqhd-dualdsi-cmd.dtsi"
  
  #include "common/regulator.dtsi"
- #include "common/i2c.dtsi"
- #include "common/sensors.dtsi"
  
  &i2c_5 {
 	 smb1357-charger@1c {
