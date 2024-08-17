@@ -22,31 +22,3 @@
 	};
 };
 
-
-    //Use pn544 for now since there does not exist a driver for pn547
-	&i2c_6 {
-		status = "okay";
-		
-		qcom,disable-dma;
-		pn547@28 { /* NFC */
-			compatible = "nxp,pn547";
-			status = "ok";
-			reg = <0x28>;
-			interrupt-parent = <&msm_gpio>;
-			interrupts = <29 0x1>;
-			nxp,irq_gpio = <&msm_gpio 29 0x00>;
-			nxp,dwld_en = <&msm_gpio 94 0x00>;
-			nxp,ven = <&msm_gpio 30 0x00>;
-			qcom,clk-src = "BBCLK2";
-			qcom,clk-gpio = <&msm_gpio 10 0>;
-			clocks = <&clock_rpm clk_bb_clk2_pin>;
-			clock-names = "nfc_clk";
-
-			interrupt-names = "nfc_irq";
-			pinctrl-names = "nfc_active","nfc_suspend";
-			pinctrl-0 = <&nfc_int_active &nfc_disable_active>;
-			pinctrl-1 = <&nfc_int_suspend &nfc_disable_suspend>;
-		};
-		
-	};	
-
