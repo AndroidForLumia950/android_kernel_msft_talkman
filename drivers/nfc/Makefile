@@ -11,4 +11,7 @@ obj-$(CONFIG_NFC_QNCI)		+= nfc-nci.o
 obj-$(CONFIG_NFC_PN548)	+= pn548.o pn548_hwadapter.o
 obj-$(CONFIG_NFC_PN547)		+= pn547.o
 
+obj-$(CONFIG_LGE_NFC_PN547_C2)	:= pn547_lge.o
+obj-$(CONFIG_LGE_NFC_PN547_C2)	+= pn547_lge_hwadapter.o
+
 ccflags-$(CONFIG_NFC_DEBUG) := -DDEBUG

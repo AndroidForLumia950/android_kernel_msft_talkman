@@ -26,7 +26,8 @@
  #include "common/hdmi.dtsi"
  #include "common/mdss.dtsi"
  #include "common/reserved-memory.dtsi"
- 
+ #include "common/nfc.dtsi"
+
  / {
 	 aliases {
 		 i2c1 = &i2c_1;
