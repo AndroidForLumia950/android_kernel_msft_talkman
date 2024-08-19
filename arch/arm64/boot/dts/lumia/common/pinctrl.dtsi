@@ -1,21 +1,59 @@
 &soc {
 	pinctrl@fd510000 {
-		apds99xx_int_pin {
+
+        /* NFC Start */
+		pmx_rd_nfc_int{
+			qcom,pins = <&gp 29>;
+			qcom,pin-func = <0>;
+			qcom,num-grp-pins = <1>;
+			label = "pmx_nfc_int";
+
+			nfc_int_active: active {
+				drive-strength = <6>;
+				bias-disable;
+			};
+
+			nfc_int_suspend: suspend {
+				drive-strength = <6>;
+				bias-disable;
+			};
+		};
+
+		pmx_nfc_reset{
+			qcom,pins = <&gp 30>;
+			qcom,pin-func = <0>;
+			qcom,num-grp-pins = <1>;
+			label = "pmx_nfc_disable";
+
+			nfc_disable_active: active {
+				drive-strength = <6>;
+				bias-disable;
+			};
+
+			nfc_disable_suspend: suspend {
+				drive-strength = <6>;
+				bias-disable;
+			};
+		};
+
+		pmx_nfc_mode{
 			qcom,pins = <&gp 94>;
 			qcom,pin-func = <0>;
 			qcom,num-grp-pins = <1>;
-			label = "apds99xx-irq";
-			apds99xx_default: apds99xx_default {
+			label = "pmx_nfc_mode";
+
+			nfc_mode_active: active {
 				drive-strength = <6>;
-				bias-pull-up;
+				bias-disable;
 			};
-	
-			apds99xx_sleep: apds99xx_sleep {
-				drive-strength = <2>;
-				bias-pull-down;
+
+			nfc_mode_suspend: suspend {
+				drive-strength = <6>;
+				bias-disable;
 			};
 		};
-	
+        /* NFC End */
+
 		pmx_i2c_7 {
 			qcom,pins = <&gp 43>, <&gp 44>; /* SDA, SCL */
 			qcom,num-grp-pins = <2>;
@@ -33,21 +71,7 @@
 			};
 		};
 	
-		mpu6050_int_pin {
-			/* Gyroscope and accelerometer sensor combo */
-			qcom,pins = <&gp 64>;
-			qcom,pin-func = <0>;
-			qcom,num-grp-pins = <1>;
-			label = "mpu6050-irq";
-			mpu6050_default: mpu6050_default {
-				drive-strength = <6>;
-				bias-pull-down;
-			};
-			mpu6050_sleep: mpu6050_sleep {
-				drive-strength = <2>;
-				bias-pull-down;
-			};
-		};
+
 
 		cnss_lpass: cnss_lpass {
 			qcom,pins = <&gp 112>;
