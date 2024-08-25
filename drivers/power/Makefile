@@ -64,6 +64,7 @@ obj-$(CONFIG_QPNP_BMS)		+= qpnp-bms.o batterydata-lib.o
 obj-$(CONFIG_QPNP_VM_BMS)	+= qpnp-vm-bms.o batterydata-lib.o batterydata-interface.o
 obj-$(CONFIG_QPNP_FG)		+= qpnp-fg.o
 obj-$(CONFIG_QPNP_CHARGER)	+= qpnp-charger.o
+obj-$(CONFIG_LGE_PM_IDTP9017_WIRELESS_CHARGER) += idtp9017_wireless_power_receiver.o
 obj-$(CONFIG_QPNP_LINEAR_CHARGER)	+= qpnp-linear-charger.o
 obj-$(CONFIG_QPNP_SMBCHARGER)	+= qpnp-smbcharger.o
 obj-$(CONFIG_CHARGER_SMB347)	+= smb347-charger.o

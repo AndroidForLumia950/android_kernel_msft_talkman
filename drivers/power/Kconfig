@@ -391,6 +391,13 @@ config SMB350_CHARGER
 	  The driver supports charger-enable and charger-suspend/resume.
 	  The driver reports the charger status via the power supply framework.
 	  A charger status change triggers an IRQ via the device STAT pin.
+	  
+config LGE_PM_IDTP9017_WIRELESS_CHARGER
+	tristate "idtp9017 wireless charger control driver"
+	depends on I2C
+	default n
+	help
+	  Say Y to enable idtp9017 wireless charger.
 
 config SMB135X_CHARGER
 	tristate "SMB135X Battery Charger"
