@@ -59,9 +59,9 @@
 		qcom,mdss-dsi-reset-sequence = <1 17>, <0 17>, <1 17>;
 		qcom,mdss-dsi-t-clk-post = <0x5>;
 		qcom,mdss-dsi-t-clk-pre = <0x5e>;
-                qcom,dynamic-dsi-timing-enable;
+    	 qcom,dynamic-dsi-timing-enable;
 		qcom,mdss-dsi-bl-min-level = <15>;
-		qcom,mdss-dsi-bl-max-level = <300>;
+		qcom,mdss-dsi-bl-max-level = <255>;
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
@@ -156,9 +156,9 @@
 		qcom,mdss-dsi-reset-sequence = <1 17>, <0 17>, <1 17>;
 		qcom,mdss-dsi-t-clk-post = <0x5>;
 		qcom,mdss-dsi-t-clk-pre = <0x5e>;
-                qcom,dynamic-dsi-timing-enable;
+        qcom,dynamic-dsi-timing-enable;
 		qcom,mdss-dsi-bl-min-level = <15>;
-		qcom,mdss-dsi-bl-max-level = <300>;
+		qcom,mdss-dsi-bl-max-level = <255>;
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 		
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
