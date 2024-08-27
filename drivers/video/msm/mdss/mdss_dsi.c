@@ -35,9 +35,7 @@ static struct dsi_drv_cm_data shared_ctrl_data;
 
 static int mdss_dsi_pinctrl_set_state(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 					bool active);
-static struct device_node *mdss_dsi_find_panel_of_node(
-		struct platform_device *pdev, char *panel_cfg);					
-					
+
 static int mdss_dsi_labibb_vreg_init(struct platform_device *pdev)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl = NULL;
@@ -117,6 +115,15 @@ static int mdss_dsi_labibb_vreg_ctrl(struct mdss_dsi_ctrl_pdata *ctrl,
 	}
 
 	return 0;
+}
+
+static int mdss_dsi_hndl_enable_hbm(struct mdss_dsi_ctrl_pdata *ctrl,
+				int enable)
+{
+	int rc = 0;
+	if (ctrl->set_hbm)
+		rc = ctrl->set_hbm(ctrl, enable);
+	return rc;
 }
 
 static int mdss_dsi_regulator_init(struct platform_device *pdev)
@@ -1559,6 +1566,9 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 		rc = mdss_dsi_panel_update_clkrate(ctrl_pdata,
                         (u32)(unsigned long)arg);
 		pr_debug("%s: update dsi timing to %d\n", __func__, (u32) (unsigned long) arg);
+		break;
+	case MDSS_EVENT_ENABLE_HBM:
+		rc = mdss_dsi_hndl_enable_hbm(ctrl_pdata, (unsigned long) arg);
 		break;
 	default:
 		pr_debug("%s: unhandled event=%d\n", __func__, event);
