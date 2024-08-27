@@ -110,6 +110,9 @@
 			];
 		qcom,mdss-pan-physical-width-dimension = <65>;
 		qcom,mdss-pan-physical-height-dimension = <115>;
+		qcom,panel-roi-alignment = <8 8 1 1 1 1>;
+		qcom,partial-update-enabled;
+		qcom,partial-update-roi-merge;
 	};
 	
 	dsi_duke_wqhd_dsi1_cmd: qcom,mdss_dsi_duke_wqhd_dsi1_cmd {
@@ -199,5 +202,8 @@
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-pan-physical-width-dimension = <65>;
 		qcom,mdss-pan-physical-height-dimension = <115>;
+		qcom,panel-roi-alignment = <8 8 1 1 1 1>;
+		qcom,partial-update-enabled;
+		qcom,partial-update-roi-merge;
 	};
 };
