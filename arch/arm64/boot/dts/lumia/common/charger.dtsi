@@ -17,8 +17,6 @@
 	qcom,fg-vbatt-low-threshold = <4200>;
 	qcom,resume-soc = <99>;
 	qcom,resume-soc-raw = <253>;
-	qcom,dc-psy-type = "Wireless";
-	qcom,dc-psy-ma = <900>;
 	qcom,fg-iterm-ma = <200>;
 	qcom,fg-chg-iterm-ma = <100>;
 	qcom,fg-cutoff-voltage-mv = <2800>;
@@ -44,7 +42,8 @@
 	qcom,parallel-usb-min-current-ma = <700>;
 	qcom,parallel-allowed-lowering-ma = <3000>;
 	qcom,chg-vadc = <&pmi8994_vadc>;
-	/delete-property/ qcom,dc-psy-type;
+	qcom,dc-psy-type = "Wireless";
+	qcom,dc-psy-ma = <900>;
 	qcom,usb-cc-controller;
 	qcom,disable-apsd;
 	qcom,disable-hvdcp;
