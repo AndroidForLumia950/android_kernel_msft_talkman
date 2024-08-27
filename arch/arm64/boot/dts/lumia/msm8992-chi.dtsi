@@ -34,20 +34,6 @@
 	 };
  };
  
- &i2c_6 {
-	 status = "ok";
-	 smb1358-charger {
-		 status = "ok";
-		 compatible = "qcom,smb1358-charger";
-		 reg = <0x1c>;
-		 qcom,parallel-charger;
-		 qcom,iterm-ma = <100>;
-		 qcom,float-voltage-mv = <4460>;
-		 qcom,recharge-thresh-mv = <100>;
-		 qcom,charging-timeout-mins = <768>;
-	 };
- };
- 
  &soc {
 		 i2c_1: i2c@f9923000 {
 		 compatible = "qcom,i2c-msm-v2";
