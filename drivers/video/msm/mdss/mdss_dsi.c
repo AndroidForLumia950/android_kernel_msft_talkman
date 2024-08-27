@@ -35,7 +35,9 @@ static struct dsi_drv_cm_data shared_ctrl_data;
 
 static int mdss_dsi_pinctrl_set_state(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 					bool active);
-
+static struct device_node *mdss_dsi_find_panel_of_node(
+		struct platform_device *pdev, char *panel_cfg);					
+					
 static int mdss_dsi_labibb_vreg_init(struct platform_device *pdev)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl = NULL;
