@@ -60,8 +60,8 @@
 		qcom,mdss-dsi-t-clk-post = <0x5>;
 		qcom,mdss-dsi-t-clk-pre = <0x5e>;
 
-		qcom,mdss-dsi-bl-min-level = <0x1>;
-		qcom,mdss-dsi-bl-max-level = <0x80>;
+		qcom,mdss-dsi-bl-min-level = <15>;
+		qcom,mdss-dsi-bl-max-level = <300>;
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
@@ -97,9 +97,17 @@
 			/* set_display_off */
 			05 01 00 00 21 00 02 28 00
 			/* set_idle_on */
-       		00 24 0A 0A 26 25 09
+       		05 01 00 00 78 00 02 10 00
 			];
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
+		qcom,mdss-dsi-hbm-on-command = [
+			/* HBM setting in 2 MSB bits of reg 53 */
+			15 01 00 00 00 00 03 53 e0 00
+			];
+
+		qcom,mdss-dsi-hbm-off-command = [
+       		15 01 00 00 00 00 02 53 20 
+			];
 		qcom,mdss-pan-physical-width-dimension = <65>;
 		qcom,mdss-pan-physical-height-dimension = <115>;
 	};
@@ -149,8 +157,8 @@
 		qcom,mdss-dsi-t-clk-post = <0x5>;
 		qcom,mdss-dsi-t-clk-pre = <0x5e>;
 
-		qcom,mdss-dsi-bl-min-level = <0x1>;
-		qcom,mdss-dsi-bl-max-level = <0x80>;
+		qcom,mdss-dsi-bl-min-level = <15>;
+		qcom,mdss-dsi-bl-max-level = <300>;
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 		
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
@@ -186,7 +194,7 @@
 			/* set_display_off */
 			05 01 00 00 21 00 02 28 00
 			/* set_idle_on */
-       		00 24 0A 0A 26 25 09
+       		05 01 00 00 78 00 02 10 00
 			];
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-pan-physical-width-dimension = <65>;
