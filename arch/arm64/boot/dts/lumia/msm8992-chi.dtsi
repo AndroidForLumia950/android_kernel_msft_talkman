@@ -27,7 +27,8 @@
  #include "common/mdss.dtsi"
  #include "common/reserved-memory.dtsi"
  #include "common/nfc.dtsi"
-
+ #include "common/ice40.dtsi"
+ 
  / {
 	 aliases {
 		 i2c1 = &i2c_1;
@@ -99,6 +100,15 @@
  
  &mdss_dsi1 {
 	 qcom,dsi-pref-prim-pan = <&dsi_duke_wqhd_dsi1_cmd>;
+ };
+ 
+ &labibb {
+	 status = "ok";
+	 qpnp,qpnp-labibb-mode = "oled";
+ };
+ 
+ &ibb_regulator {
+	 qcom,qpnp-ibb-discharge-resistor = <32>;
  };
  
  &usb3 {

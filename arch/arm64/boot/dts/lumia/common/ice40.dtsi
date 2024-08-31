@@ -1,0 +1,52 @@
+&soc {
+
+	blsp2_spi4: spi@f9966000 {
+		status = "ok";
+		compatible = "qcom,spi-qup-v2";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg-names = "spi_physical", "spi_bam_physical";
+		reg = <0xf9966000 0x1000>, <0xf9944000 0x19000>;
+
+		interrupt-names = "spi_irq", "spi_bam_irq";
+		interrupts = <0 104 0>, <0 239 0>;
+		pinctrl-names = "spi_default", "spi_sleep";
+		pinctrl-0 = <&spi4_default &spi4_cs2_active>;
+		pinctrl-1 = <&spi4_sleep &spi4_cs2_sleep>;
+		spi-max-frequency = <5000000>;
+
+		qcom,master-id = <84>;
+		clock-names = "iface_clk", "core_clk";
+		    clocks = <&clock_gcc clk_gcc_blsp2_ahb_clk>,
+			 <&clock_gcc clk_gcc_blsp2_qup4_spi_apps_clk>;
+
+		qcom,gpio-mosi = <&msm_gpio 53 0>;
+		qcom,gpio-miso = <&msm_gpio 54 0>;
+
+		qcom,infinite-mode = <0>;
+		qcom,use-bam;
+		qcom,ver-reg-exists;
+		qcom,bam-consumer-pipe-index = <18>;
+		qcom,bam-producer-pipe-index = <19>;
+		qcom,shared;
+
+		lattice,spi-usb@0 {
+			compatible = "lattice,ice40-spi-usb";
+			reg = <0>;
+			spi-cpol = <1>;
+			spi-cpha = <1>;
+			core-vcc-supply = <&pm8994_l31>;
+			spi-vcc-supply = <&pm8994_l19>;
+			qcom,pm-qos-latency = <2>;
+			lattice,reset-gpio = <&msm_gpio 4 0>;
+			lattice,vcc-en-gpio = <&msm_gpio 5 0>;
+			lattice,config-done-gpio = <&msm_gpio 95 0>;
+            spi-max-frequency = <5000000>;
+			pinctrl-names = "default", "sleep";
+			pinctrl-0 = <&ice40_default>;
+			pinctrl-1 = <&ice40_sleep>;
+		};
+    };
+};
