@@ -402,10 +402,10 @@ static int ice40_reset(struct usb_hcd *hcd)
 	}
 
 	status = ice40_spi_reg_read(ihcd, XFRST_REG);
-	pr_debug("line state (D+, D-) is %d\n", LINE_STATE(status));
+	pr_err("line state (D+, D-) is %d\n", LINE_STATE(status));
 
 	if (status & DPST) {
-		pr_debug("Full speed device connected\n");
+		pr_err("Full speed device connected\n");
 		ihcd->port_flags |= USB_PORT_STAT_CONNECTION;
 	} else {
 		pr_err("No device connected\n");
@@ -1091,7 +1091,7 @@ static void ice40_async_work(struct work_struct *work)
 			pm_qos_update_request(&ihcd->ice40_pm_qos_req_dma,
 					ihcd->pm_qos_latency_us);
 			ihcd->pm_qos_voted = true;
-			pr_debug("pm_qos voted\n");
+			pr_err("pm_qos voted\n");
 		}
 	}
 
@@ -1163,7 +1163,7 @@ static void ice40_pm_qos_work_f(struct work_struct *work)
 	pm_qos_update_request(&ihcd->ice40_pm_qos_req_dma,
 			PM_QOS_DEFAULT_VALUE);
 	ihcd->pm_qos_voted = false;
-	pr_debug("pm_qos devoted\n");
+	pr_err("pm_qos devoted\n");
 
 }
 
@@ -1185,7 +1185,7 @@ ice40_urb_enqueue(struct usb_hcd *hcd, struct urb *urb, gfp_t mem_flags)
 	 * is no use case.
 	 */
 	if (usb_pipeisoc(urb->pipe) || usb_pipeint(urb->pipe)) {
-		pr_debug("iso and int xfers not supported\n");
+		pr_err("iso and int xfers not supported\n");
 		ret = -ENOTSUPP;
 		goto out;
 	}
@@ -1202,7 +1202,7 @@ ice40_urb_enqueue(struct usb_hcd *hcd, struct urb *urb, gfp_t mem_flags)
 	if (!iep) {
 		iep = kzalloc(sizeof(struct ice40_ep), GFP_ATOMIC);
 		if (!iep) {
-			pr_debug("fail to allocate iep\n");
+			pr_err("fail to allocate iep\n");
 			ret = -ENOMEM;
 			goto unlink;
 		}
@@ -1444,7 +1444,7 @@ static int ice40_bus_suspend(struct usb_hcd *hcd)
 
 	/* This happens only during debugging */
 	if (!ihcd->devnum) {
-		pr_debug("device still not connected. abort suspend\n");
+		pr_err("device still not connected. abort suspend\n");
 		trace_ice40_bus_suspend(2); /* failure */
 		return -EAGAIN;
 	}
@@ -1755,7 +1755,7 @@ static int ice40_spi_cache_fw(struct ice40_hcd *ihcd)
 		goto out;
 	}
 
-	pr_debug("received firmware size = %zu\n", fw->size);
+	pr_err("received firmware size = %zu\n", fw->size);
 
 	/*
 	 * The bridge expects additional clock cycles after
@@ -1885,7 +1885,7 @@ static int ice40_spi_load_fw(struct ice40_hcd *ihcd)
 	for (i = 0; i < 1000; i++) {
 		ret = gpio_get_value(ihcd->config_done_gpio);
 		if (ret) {
-			pr_debug("config done asserted %d\n", i);
+			pr_err("config done asserted %d\n", i);
 			break;
 		}
 		udelay(1);
@@ -1929,12 +1929,12 @@ static int ice40_spi_load_fw(struct ice40_hcd *ihcd)
 	udelay(100);
 
 	ret = ice40_spi_reg_read(ihcd, XFRST_REG);
-	pr_debug("XFRST val is %x\n", ret);
-	if (!(ret & PLLOK)) {
+	pr_err("XFRST val is %x\n", ret);
+	/*if (!(ret & PLLOK)) {
 		pr_err("The PLL2 is not synchronized\n");
 		ret = -ENODEV;
 		goto clocks_off;
-	}
+	}*/
 
 	pr_info("Firmware load success\n");
 
@@ -1986,7 +1986,7 @@ static int ice40_spi_init_regulators(struct ice40_hcd *ihcd)
 		goto out;
 	}
 
-	ret = regulator_set_voltage(ihcd->spi_vcc, 1800000, 1800000);
+	ret = regulator_set_voltage(ihcd->spi_vcc, 3300000, 3300000);
 	if (ret < 0) {
 		pr_err("fail to set spi-vcc %d\n", ret);
 		goto out;
@@ -2354,12 +2354,6 @@ static int ice40_spi_probe(struct spi_device *spi)
 	struct ice40_hcd *ihcd;
 	int ret, i;
 
-	if (!uicc_card_present) {
-		pr_debug("UICC card is not inserted\n");
-		ret = -ENODEV;
-		goto out;
-	}
-
 	ihcd = devm_kzalloc(&spi->dev, sizeof(*ihcd), GFP_KERNEL);
 	if (!ihcd) {
 		pr_err("fail to allocate ihcd\n");
@@ -2486,7 +2480,7 @@ static int ice40_spi_probe(struct spi_device *spi)
 		pm_qos_add_request(&ihcd->ice40_pm_qos_req_dma,
 				PM_QOS_CPU_DMA_LATENCY, PM_QOS_DEFAULT_VALUE);
 
-	pr_debug("success\n");
+	pr_err("success\n");
 
 	return 0;
 
