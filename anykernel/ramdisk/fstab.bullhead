@@ -1,0 +1,27 @@
+# Android fstab file.
+#<src>                                         <mnt_point>  <type>  <mnt_flags and options>  <fs_mgr_flags>
+# The filesystem that contains the filesystem checker binary (typically /system) cannot
+# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/system       /system         ext4    ro,barrier=1,inode_readahead_blks=8                             wait,check,first_stage_mount
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/vendor       /vendor         ext4    ro,barrier=1,inode_readahead_blks=8                             wait,check,first_stage_mount
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/userdata     /data           ext4    noatime,nosuid,nodev,barrier=1,data=ordered,nomblk_io_submit,noauto_da_alloc,inode_readahead_blks=8 wait,check,encryptable=footer
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/cache        /cache          ext4    noatime,nosuid,nodev,barrier=1,data=ordered,nomblk_io_submit,noauto_da_alloc wait,check
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/persist      /persist        ext4    noatime,nosuid,nodev,barrier=1,data=ordered,nodelalloc,nomblk_io_submit wait,notrim
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/modem        /firmware       vfat    ro,shortname=lower,uid=1000,gid=1000,dmask=227,fmask=337,context=u:object_r:firmware_file:s0        wait
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/boot         /boot           emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/recovery     /recovery       emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/misc         /misc           emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/modem        /radio          emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/SBL1         /sbl1           emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/TZ           /tz             emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/RPM          /rpm            emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/SDI          /sdi            emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/aboot        /aboot          emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/PMIC         /pmic           emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/HYP          /hyp            emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/SEC          /sec            emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/cmnlib       /cmnlib         emmc    defaults                                                        defaults
+/dev/block/platform/soc.0/f9824900.sdhci/by-name/persistent   /persistent     emmc    defaults                                                        defaults
+/devices/soc.0/f9200000.ssusb/f9200000.dwc3/xhci-hcd.0.auto/usb*    auto      auto    defaults                                                        voldmanaged=usb:auto
+/dev/block/zram0                                              none            swap    defaults                                                        zramsize=1073741824,notrim
