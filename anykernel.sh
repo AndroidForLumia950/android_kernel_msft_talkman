@@ -21,7 +21,7 @@ function zipping() {
     mv $FINAL_ZIP $KERNEL_DIR/
 
     # Clean AnyKernel3 directory if needed (optional)
-    # cd ..; rm -rf $ANYKERNEL3_DIR/*
+    cd ..; rm -rf $ANYKERNEL3_DIR/Image.gz-dtb*
 
     # Return to the original kernel directory
     cd $KERNEL_DIR
@@ -29,3 +29,4 @@ function zipping() {
 
 # Execute the zipping function
 zipping
+echo done!
