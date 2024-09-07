@@ -5,6 +5,9 @@ ANYKERNEL3_DIR=$KERNEL_DIR/anykernel # Define the AnyKernel3 directory
 IMAGE=$KERNEL_DIR/arch/arm64/boot/Image.gz-dtb # Define the kernel image path
 
 function zipping() {
+    # Delete old zip files that match the naming pattern
+    rm -f $KERNEL_DIR/Perf-kernel-*.zip
+
     # Copying kernel essentials
     cp $IMAGE $ANYKERNEL3_DIR
 
@@ -30,3 +33,4 @@ function zipping() {
 # Execute the zipping function
 zipping
 echo done!
+
