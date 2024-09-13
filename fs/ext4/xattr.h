@@ -141,28 +141,7 @@ static inline void ext4_write_unlock_xattr(struct inode *inode, int *save)
  * second case, we need to make sure that we take save and restore the
  * NO_EXPAND state flag appropriately.
  */
-static inline void ext4_write_lock_xattr(struct inode *inode, int *save)
-{
-	down_write(&EXT4_I(inode)->xattr_sem);
-	*save = ext4_test_inode_state(inode, EXT4_STATE_NO_EXPAND);
-	ext4_set_inode_state(inode, EXT4_STATE_NO_EXPAND);
-}
 
-static inline int ext4_write_trylock_xattr(struct inode *inode, int *save)
-{
-	if (down_write_trylock(&EXT4_I(inode)->xattr_sem) == 0)
-		return 0;
-	*save = ext4_test_inode_state(inode, EXT4_STATE_NO_EXPAND);
-	ext4_set_inode_state(inode, EXT4_STATE_NO_EXPAND);
-	return 1;
-}
-
-static inline void ext4_write_unlock_xattr(struct inode *inode, int *save)
-{
-	if (*save == 0)
-		ext4_clear_inode_state(inode, EXT4_STATE_NO_EXPAND);
-	up_write(&EXT4_I(inode)->xattr_sem);
-}
 
 extern ssize_t ext4_listxattr(struct dentry *, char *, size_t);
 

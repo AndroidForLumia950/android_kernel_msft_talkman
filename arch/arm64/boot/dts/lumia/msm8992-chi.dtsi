@@ -134,7 +134,7 @@
  };
  
  &usb_otg_switch {
-	 status = "disabled";
+	 status = "ok";
  };
  &qusb_phy {
 	 status = "disabled";
