@@ -49,10 +49,11 @@
 
 #define MPAGE_DA_EXTENT_TAIL 0x01
 
-struct inode *find_inode_nowait(struct super_block *sb, unsigned long ino, 
-                                int (*test)(struct inode *, void *), void *data);
-
-
+extern struct inode *find_inode_nowait(struct super_block *sb,
+                                       unsigned long hashval,
+                                       int (*match)(struct inode *, unsigned long, void *),
+                                       void *data);
+                                       
 static __u32 ext4_inode_csum(struct inode *inode, struct ext4_inode *raw,
 			      struct ext4_inode_info *ei)
 {
