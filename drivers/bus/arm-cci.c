@@ -1111,7 +1111,8 @@ static const struct cci_nb_ports cci400_ports = {
 };
 
 static const struct of_device_id arm_cci_matches[] = {
-	{.compatible = "arm,cci-400", .data = &cci400_ports },
+	{ .compatible = "arm,cci-400", .data = (const void *)&cci400_ports },
+
 	{},
 };
 

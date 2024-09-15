@@ -298,9 +298,9 @@ static const struct bwmon_spec spec[] = {
 };
 
 static struct of_device_id match_table[] = {
-	{ .compatible = "qcom,bimc-bwmon", .data = &spec[0] },
-	{ .compatible = "qcom,bimc-bwmon2", .data = &spec[1] },
-	{}
+      { .compatible = "qcom,bimc-bwmon", .data = (const void *)&spec[0] },
+      { .compatible = "qcom,bimc-bwmon2", .data = (const void *)&spec[1] },
+      {}
 };
 
 static int bimc_bwmon_driver_probe(struct platform_device *pdev)
