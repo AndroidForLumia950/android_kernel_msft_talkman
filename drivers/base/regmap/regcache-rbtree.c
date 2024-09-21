@@ -31,7 +31,7 @@ struct regcache_rbtree_node {
 	void *block;
 	/* number of registers available in the block */
 	unsigned int blklen;
-} __attribute__ ((packed));
+} __attribute__((packed, aligned(8)));
 
 struct regcache_rbtree_ctx {
 	struct rb_root root;

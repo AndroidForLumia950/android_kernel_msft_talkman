@@ -237,7 +237,7 @@ struct sctp_paddr_change {
 	int spc_state;
 	int spc_error;
 	sctp_assoc_t spc_assoc_id;
-} __attribute__((packed, aligned(4)));
+} __attribute__((packed, aligned(8)));
 
 /*
  *    spc_state:  32 bits (signed integer)
@@ -511,7 +511,7 @@ struct sctp_assocparams {
 struct sctp_setpeerprim {
 	sctp_assoc_t            sspp_assoc_id;
 	struct sockaddr_storage sspp_addr;
-} __attribute__((packed, aligned(4)));
+} __attribute__((aligned(8)));
 
 /*
  * 7.1.10 Set Primary Address (SCTP_PRIMARY_ADDR)
@@ -524,7 +524,7 @@ struct sctp_setpeerprim {
 struct sctp_prim {
 	sctp_assoc_t            ssp_assoc_id;
 	struct sockaddr_storage ssp_addr;
-} __attribute__((packed, aligned(4)));
+} __attribute__((aligned(8)));
 
 /* For backward compatibility use, define the old name too */
 #define sctp_setprim	sctp_prim
@@ -571,7 +571,7 @@ struct sctp_paddrparams {
 	__u32			spp_pathmtu;
 	__u32			spp_sackdelay;
 	__u32			spp_flags;
-} __attribute__((packed, aligned(4)));
+} __attribute__((aligned(8)));
 
 /*
  * 7.1.18.  Add a chunk that must be authenticated (SCTP_AUTH_CHUNK)
@@ -678,7 +678,7 @@ struct sctp_paddrinfo {
 	__u32			spinfo_srtt;
 	__u32			spinfo_rto;
 	__u32			spinfo_mtu;
-} __attribute__((packed, aligned(4)));
+} __attribute__((aligned(8)));
 
 /* Peer addresses's state. */
 /* UNKNOWN: Peer address passed by the upper layer in sendmsg or connect[x]
