@@ -4241,29 +4241,28 @@ tSirRetStatus limStaSendAddBssPreAssoc( tpAniSirGlobal pMac, tANI_U8 updateEntry
     }
 
 
-    // Package SIR_HAL_ADD_BSS_REQ message parameters
-    pAddBssParams = vos_mem_malloc(sizeof(tAddBssParams));
-    if (NULL == pAddBssParams)
-    {
-        limLog( pMac, LOGP,
-                FL( "Unable to allocate memory during ADD_BSS" ));
-        retCode = eSIR_MEM_ALLOC_FAILED;
-        goto returnFailure;
-    }
+// Package SIR_HAL_ADD_BSS_REQ message parameters
+pAddBssParams = vos_mem_malloc(sizeof(tAddBssParams));
+if (NULL == pAddBssParams)
+{
+    limLog(pMac, LOGP,
+           FL("Unable to allocate memory during ADD_BSS"));
+    retCode = eSIR_MEM_ALLOC_FAILED;
+    goto returnFailure;
+}
 
-    vos_mem_set((tANI_U8 *) pAddBssParams, sizeof( tAddBssParams ), 0);
+vos_mem_set((tANI_U8 *)pAddBssParams, sizeof(tAddBssParams), 0);
 
+limExtractApCapabilities(pMac,
+                         (tANI_U8 *)bssDescription->ieFields,
+                         limGetIElenFromBssDescription(bssDescription),
+                         pBeaconStruct);
 
-    limExtractApCapabilities( pMac,
-                            (tANI_U8 *) bssDescription->ieFields,
-                            limGetIElenFromBssDescription( bssDescription ),
-                            pBeaconStruct );
-
-    if(pMac->lim.gLimProtectionControl != WNI_CFG_FORCE_POLICY_PROTECTION_DISABLE)
-        limDecideStaProtectionOnAssoc(pMac, pBeaconStruct, psessionEntry);
-        vos_mem_copy(pAddBssParams->bssId, bssDescription->bssId,
-                     sizeof(tSirMacAddr));
-
+if (pMac->lim.gLimProtectionControl != WNI_CFG_FORCE_POLICY_PROTECTION_DISABLE) {
+    limDecideStaProtectionOnAssoc(pMac, pBeaconStruct, psessionEntry);
+    vos_mem_copy(pAddBssParams->bssId, bssDescription->bssId,
+                 sizeof(tSirMacAddr));
+}
     // Fill in tAddBssParams selfMacAddr
     vos_mem_copy(pAddBssParams->selfMacAddr,
                  psessionEntry->selfMacAddr,

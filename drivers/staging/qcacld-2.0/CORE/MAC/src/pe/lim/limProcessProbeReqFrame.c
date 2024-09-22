@@ -161,7 +161,7 @@ static void limRemoveTimeoutPBCsessions(tpAniSirGlobal pMac, tSirWPSPBCSession *
        }
 }
 
-void limRemovePBCSessions(tpAniSirGlobal pMac, tSirMacAddr pRemoveMac,tpPESession psessionEntry)
+void limRemovePBCSessions(tpAniSirGlobal pMac, tSirMacAddr pRemoveMac, tpPESession psessionEntry)
 {
     tSirWPSPBCSession *pbc, *prev = NULL;
     prev = pbc = psessionEntry->pAPWPSPBCSession;
@@ -169,16 +169,16 @@ void limRemovePBCSessions(tpAniSirGlobal pMac, tSirMacAddr pRemoveMac,tpPESessio
     while (pbc) {
         if (vos_mem_compare((tANI_U8 *)pbc->addr,
                             (tANI_U8 *)pRemoveMac, sizeof(tSirMacAddr))) {
-          prev->next = pbc->next;
-          if (pbc == psessionEntry->pAPWPSPBCSession)
-            psessionEntry->pAPWPSPBCSession = pbc->next;
+            prev->next = pbc->next;
+            if (pbc == psessionEntry->pAPWPSPBCSession) {
+                psessionEntry->pAPWPSPBCSession = pbc->next;
+            }
             vos_mem_free(pbc);
             return;
         }
         prev = pbc;
         pbc = pbc->next;
     }
-
 }
 
 /**

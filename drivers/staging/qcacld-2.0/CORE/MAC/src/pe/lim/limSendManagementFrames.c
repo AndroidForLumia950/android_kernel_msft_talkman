@@ -5299,21 +5299,19 @@ tSirRetStatus limSendAddBARsp( tpAniSirGlobal pMac,
                             pAddBARspBuffer, txFlag, smeSessionId);
     MTRACE(vos_trace(VOS_MODULE_ID_PE, TRACE_CODE_TX_COMPLETE,
            psessionEntry->peSessionId, halStatus));
-    if (eHAL_STATUS_SUCCESS != halStatus )
-    {
-        limLog( pMac, LOGE,
-                FL( "halTxFrame FAILED! Status [%d]" ),
-                halStatus );
+if (eHAL_STATUS_SUCCESS != halStatus) {
+    limLog(pMac, LOGE, FL("halTxFrame FAILED! Status [%d]"), halStatus);
 
-    // FIXME - HAL error codes are different from PE error
-    // codes!! And, this routine is returning tSirRetStatus
+    // FIXME - HAL error codes are different from PE error codes!!
+    // And, this routine is returning tSirRetStatus
     statusCode = eSIR_FAILURE;
-    //Pkt will be freed up by the callback
+    // Pkt will be freed up by the callback
     return statusCode;
-   }
-   else
-      return eSIR_SUCCESS;
+} else {
+    return eSIR_SUCCESS;
+}
 
+      
       returnAfterError:
 
       // Release buffer, if allocated
@@ -5487,15 +5485,15 @@ tSirRetStatus limSendDelBAInd( tpAniSirGlobal pMac,
                             pDelBAIndBuffer, txFlag, smeSessionId);
     MTRACE(vos_trace(VOS_MODULE_ID_PE, TRACE_CODE_TX_COMPLETE,
                      psessionEntry->peSessionId, halStatus));
-   if (eHAL_STATUS_SUCCESS != halStatus )
-   {
-       PELOGE(limLog( pMac, LOGE, FL( "halTxFrame FAILED! Status [%d]" ), halStatus );)
-       statusCode = eSIR_FAILURE;
-       //Pkt will be freed up by the callback
-       return statusCode;
-    }
-    else
-      return eSIR_SUCCESS;
+  if (eHAL_STATUS_SUCCESS != halStatus) {
+    PELOGE(limLog(pMac, LOGE, FL("halTxFrame FAILED! Status [%d]"), halStatus);)
+    statusCode = eSIR_FAILURE;
+    // Pkt will be freed up by the callback
+    return statusCode;
+    } else {
+    return eSIR_SUCCESS;
+}
+
 
       returnAfterError:
 

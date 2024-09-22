@@ -3713,24 +3713,24 @@ tLimMlmRemoveKeyCnf  mlmRemoveKeyCnf;
          (pStaDs->mlmStaContext.mlmState !=
                        eLIM_MLM_LINK_ESTABLISHED_STATE)))
   {
-     /**
-       * Received LIM_MLM_REMOVEKEY_REQ for STA
-       * that does not have context or in some
-       * transit state. Log error.
-       */
-      limLog( pMac, LOGW,
-          FL("Received MLM_REMOVEKEYS_REQ for STA that either has no context or in some transit state, Addr = "));
-      limPrintMacAddr( pMac, pMlmRemoveKeyReq->peerMacAddr, LOGW );
+/**
+ * Received LIM_MLM_REMOVEKEY_REQ for STA
+ * that does not have context or is in some
+ * transit state. Log error.
+ */
+limLog(pMac, LOGW,
+    FL("Received MLM_REMOVEKEYS_REQ for STA that either has no context or in some transit state, Addr = "));
+limPrintMacAddr(pMac, pMlmRemoveKeyReq->peerMacAddr, LOGW);
 
-      // Prepare and Send LIM_MLM_REMOVEKEY_CNF
-      mlmRemoveKeyCnf.resultCode = eSIR_SME_INVALID_PARAMETERS;
-      mlmRemoveKeyCnf.sessionId = pMlmRemoveKeyReq->sessionId;
+// Prepare and Send LIM_MLM_REMOVEKEY_CNF
+mlmRemoveKeyCnf.resultCode = eSIR_SME_INVALID_PARAMETERS;
+mlmRemoveKeyCnf.sessionId = pMlmRemoveKeyReq->sessionId;
 
+goto end; // Exit point
+}
 
-      goto end;
-  }
-  else
-    staIdx = pStaDs->staIndex;
+// No need for else since we are using goto
+staIdx = pStaDs->staIndex;
 
 
 

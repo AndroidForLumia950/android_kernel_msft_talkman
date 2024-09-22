@@ -1090,32 +1090,35 @@ __limIbssSearchAndDeletePeer(tpAniSirGlobal pMac,
 	while (NULL != pTempNode) {
 		pTempNextNode = pTempNode->next;
 
-		/* Delete the STA with MAC address */
-		if (vos_mem_compare((tANI_U8 *) macAddr,
-			(tANI_U8 *) &pTempNode->peerMacAddr,
-			sizeof(tSirMacAddr))) {
-			pStaDs = dphLookupHashEntry(pMac, macAddr,
-				&peerIdx, &psessionEntry->dph.dphHashTable);
-			if (pStaDs) {
-				staIndex = pStaDs->staIndex;
-				ucUcastSig = pStaDs->ucUcastSig;
-				ucBcastSig = pStaDs->ucBcastSig;
-				/**
-				 * Send DEL STA only if ADD STA
-				 * was success i.e staid is Valid.
-				*/
-				if (HAL_STA_INVALID_IDX != staIndex)
-					limDelSta(pMac, pStaDs,
-						false /*asynchronous*/,
-						psessionEntry);
-					limDeleteDphHashEntry(pMac,
-							pStaDs->staAddr,
-							peerIdx, psessionEntry);
-				limReleasePeerIdx(pMac, peerIdx, psessionEntry);
-				/**
-				 * Send indication to upper layers only if ADD
-				 * STA was success i.e staid is Valid.
-				 */
+/* Delete the STA with MAC address */
+if (vos_mem_compare((tANI_U8 *)macAddr,
+                    (tANI_U8 *)&pTempNode->peerMacAddr,
+                    sizeof(tSirMacAddr))) {
+    pStaDs = dphLookupHashEntry(pMac, macAddr,
+                                 &peerIdx, &psessionEntry->dph.dphHashTable);
+    if (pStaDs) {
+        staIndex = pStaDs->staIndex;
+        ucUcastSig = pStaDs->ucUcastSig;
+        ucBcastSig = pStaDs->ucBcastSig;
+
+        /**
+         * Send DEL STA only if ADD STA
+         * was successful, i.e., staIndex is valid.
+         */
+        if (HAL_STA_INVALID_IDX != staIndex) {
+            limDelSta(pMac, pStaDs,
+                      false /*asynchronous*/,
+                      psessionEntry);
+            limDeleteDphHashEntry(pMac,
+                                   pStaDs->staAddr,
+                                   peerIdx, psessionEntry);
+        } // Added braces for clarity
+
+        limReleasePeerIdx(pMac, peerIdx, psessionEntry);
+        /**
+	* Send indication to upper layers only if ADD
+        * STA was success i.e staid is Valid.
+	*/
 				if (HAL_STA_INVALID_IDX != staIndex)
 					ibss_status_chg_notify(pMac, macAddr,
 						staIndex,

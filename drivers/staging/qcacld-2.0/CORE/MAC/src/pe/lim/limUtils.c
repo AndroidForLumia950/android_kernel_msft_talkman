@@ -4073,10 +4073,11 @@ limEnableHtOBSSProtection(tpAniSirGlobal pMac, tANI_U8 enable,
   -------------------------------------------------------------*/
 tSirRetStatus
 limEnableHT20Protection(tpAniSirGlobal pMac, tANI_U8 enable,
-    tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams,tpPESession psessionEntry)
+    tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams, tpPESession psessionEntry)
 {
-    if(!psessionEntry->htCapability)
-        return eSIR_SUCCESS; // this protection  is only for HT stations.
+    if (!psessionEntry->htCapability) {
+        return eSIR_SUCCESS; // this protection is only for HT stations.
+    }
 
         //overlapping protection configuration check.
         if(overlap) {
@@ -4277,10 +4278,12 @@ limEnableHT20Protection(tpAniSirGlobal pMac, tANI_U8 enable,
   -------------------------------------------------------------*/
 tSirRetStatus
 limEnableHTNonGfProtection(tpAniSirGlobal pMac, tANI_U8 enable,
-    tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams,tpPESession psessionEntry)
+    tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams, tpPESession psessionEntry)
 {
-    if(!psessionEntry->htCapability)
-        return eSIR_SUCCESS; // this protection  is only for HT stations.
+    if (!psessionEntry->htCapability) {
+        return eSIR_SUCCESS; // this protection is only for HT stations.
+    }
+
 
         //overlapping protection configuration check.
         if(overlap) {
@@ -4342,10 +4345,12 @@ limEnableHTNonGfProtection(tpAniSirGlobal pMac, tANI_U8 enable,
   -------------------------------------------------------------*/
 tSirRetStatus
 limEnableHTLsigTxopProtection(tpAniSirGlobal pMac, tANI_U8 enable,
-    tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams,tpPESession psessionEntry)
+    tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams, tpPESession psessionEntry)
 {
-    if(!psessionEntry->htCapability)
-        return eSIR_SUCCESS; // this protection  is only for HT stations.
+    if (!psessionEntry->htCapability) {
+        return eSIR_SUCCESS; // this protection is only for HT stations.
+    }
+
 
         //overlapping protection configuration check.
         if(overlap) {
@@ -4407,10 +4412,11 @@ limEnableHTLsigTxopProtection(tpAniSirGlobal pMac, tANI_U8 enable,
   -------------------------------------------------------------*/
 tSirRetStatus
 limEnableHtRifsProtection(tpAniSirGlobal pMac, tANI_U8 enable,
-    tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams,tpPESession psessionEntry)
+    tANI_U8 overlap, tpUpdateBeaconParams pBeaconParams, tpPESession psessionEntry)
 {
-    if(!psessionEntry->htCapability)
-        return eSIR_SUCCESS; // this protection  is only for HT stations.
+    if (!psessionEntry->htCapability) {
+        return eSIR_SUCCESS; // this protection is only for HT stations.
+    }
 
 
         //overlapping protection configuration check.

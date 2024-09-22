@@ -97,29 +97,31 @@ void limUpdateAssocStaDatas(tpAniSirGlobal pMac, tpDphHashNode pStaDs, tpSirAsso
        pStaDs->mlmStaContext.capabilityInfo = pAssocRsp->capabilityInfo;
        pStaDs->shortPreambleEnabled= (tANI_U8)pAssocRsp->capabilityInfo.shortPreamble;
 
-       //Update HT Capabilites only when the self mode supports HT
-       if(IS_DOT11_MODE_HT(psessionEntry->dot11mode)) {
-           pStaDs->mlmStaContext.htCapability = pAssocRsp->HTCaps.present;
+// Update HT Capabilities only when the self mode supports HT
+if (IS_DOT11_MODE_HT(psessionEntry->dot11mode)) {
+    pStaDs->mlmStaContext.htCapability = pAssocRsp->HTCaps.present;
 
-           if ( pAssocRsp->HTCaps.present ) {
-               pStaDs->htGreenfield = ( tANI_U8 ) pAssocRsp->HTCaps.greenField;
-               if (psessionEntry->htSupportedChannelWidthSet) {
-                   pStaDs->htSupportedChannelWidthSet =
-                           (tANI_U8)(pAssocRsp->HTCaps.supportedChannelWidthSet ?
-                           pAssocRsp->HTInfo.recommendedTxWidthSet :
-                           pAssocRsp->HTCaps.supportedChannelWidthSet);
-               }
-               else
-                   pStaDs->htSupportedChannelWidthSet = eHT_CHANNEL_WIDTH_20MHZ;
+    if (pAssocRsp->HTCaps.present) {
+        pStaDs->htGreenfield = (tANI_U8)pAssocRsp->HTCaps.greenField;
 
-                   pStaDs->htLsigTXOPProtection = ( tANI_U8 ) pAssocRsp->HTCaps.lsigTXOPProtection;
-                   pStaDs->htMIMOPSState =  (tSirMacHTMIMOPowerSaveState)pAssocRsp->HTCaps.mimoPowerSave;
-                   pStaDs->htMaxAmsduLength = ( tANI_U8 ) pAssocRsp->HTCaps.maximalAMSDUsize;
-                   pStaDs->htAMpduDensity =             pAssocRsp->HTCaps.mpduDensity;
-                   pStaDs->htDsssCckRate40MHzSupport = (tANI_U8)pAssocRsp->HTCaps.dsssCckMode40MHz;
-                   pStaDs->htMaxRxAMpduFactor = pAssocRsp->HTCaps.maxRxAMPDUFactor;
-                   limFillRxHighestSupportedRate(pMac, &rxHighestRate, pAssocRsp->HTCaps.supportedMCSSet);
-                   pStaDs->supportedRates.rxHighestDataRate = rxHighestRate;
+        if (psessionEntry->htSupportedChannelWidthSet) {
+            pStaDs->htSupportedChannelWidthSet = (tANI_U8)(pAssocRsp->HTCaps.supportedChannelWidthSet ?
+                pAssocRsp->HTInfo.recommendedTxWidthSet :
+                pAssocRsp->HTCaps.supportedChannelWidthSet);
+        } else {
+            pStaDs->htSupportedChannelWidthSet = eHT_CHANNEL_WIDTH_20MHZ;
+        } // Added braces for clarity
+
+        pStaDs->htLsigTXOPProtection = (tANI_U8)pAssocRsp->HTCaps.lsigTXOPProtection;
+        pStaDs->htMIMOPSState = (tSirMacHTMIMOPowerSaveState)pAssocRsp->HTCaps.mimoPowerSave;
+        pStaDs->htMaxAmsduLength = (tANI_U8)pAssocRsp->HTCaps.maximalAMSDUsize;
+        pStaDs->htAMpduDensity = pAssocRsp->HTCaps.mpduDensity;
+        pStaDs->htDsssCckRate40MHzSupport = (tANI_U8)pAssocRsp->HTCaps.dsssCckMode40MHz;
+        pStaDs->htMaxRxAMpduFactor = pAssocRsp->HTCaps.maxRxAMPDUFactor;
+
+        limFillRxHighestSupportedRate(pMac, &rxHighestRate, pAssocRsp->HTCaps.supportedMCSSet);
+        pStaDs->supportedRates.rxHighestDataRate = rxHighestRate;
+        
                    /* This is for AP as peer STA and we are INFRA STA. We will put APs offset in dph node which is peer STA */
                    pStaDs->htSecondaryChannelOffset = (tANI_U8)pAssocRsp->HTInfo.secondaryChannelOffset;
 

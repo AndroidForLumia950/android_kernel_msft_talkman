@@ -344,10 +344,10 @@ __limProcessExtScanBeaconProbeRsp(tpAniSirGlobal pmac, uint8_t *rx_pkt_info,
 *    handled by limHandleFramesInScanState before __limHandleBeacon call is invoked.
 * during scanning, when any session is active, but beacon/Pr does not belong to that session, psessionEntry will be null.
 *    handled by limHandleFramesInScanState before __limHandleBeacon call is invoked.
-* during scanning, when any session is active, and beacon/Pr belongs to one of the session, psessionEntry will not be null.
+* during scanning, when any session is active, and beacon/Pr belongs to one of the sessions, psessionEntry will not be null.
 *    handled by limHandleFramesInScanState before __limHandleBeacon call is invoked.
 * Not scanning, no session:
-*    there should not be any beacon coming, if coming, should be dropped.
+*    there should not be any beacon coming; if coming, it should be dropped.
 * Not Scanning,
 */
 static void
@@ -357,24 +357,20 @@ __limHandleBeacon(tpAniSirGlobal pMac, tpSirMsgQ pMsg, tpPESession psessionEntry
     tANI_U8 *pRxPacketInfo;
     limGetBDfromRxPacket(pMac, pMsg->bodyptr, (tANI_U32 **)&pRxPacketInfo);
 
-    //This function should not be called if beacon is received in scan state.
-    //So not doing any checks for the global state.
+    // This function should not be called if a beacon is received in scan state.
+    // So not doing any checks for the global state.
 
-    if(psessionEntry == NULL)
-    {
+    if (psessionEntry == NULL) {
         schBeaconProcess(pMac, pRxPacketInfo, NULL);
-    }
-    else if( (psessionEntry->limSmeState == eLIM_SME_LINK_EST_STATE) ||
-                (psessionEntry->limSmeState == eLIM_SME_NORMAL_STATE))
-    {
+    } else if ((psessionEntry->limSmeState == eLIM_SME_LINK_EST_STATE) ||
+               (psessionEntry->limSmeState == eLIM_SME_NORMAL_STATE)) {
         schBeaconProcess(pMac, pRxPacketInfo, psessionEntry);
-    }
-     else
+    } else {
         limProcessBeaconFrame(pMac, pRxPacketInfo, psessionEntry);
+    }
 
-        return;
+    return;
 }
-
 
 //Fucntion prototype
 void limProcessNormalHddMsg(tpAniSirGlobal pMac, tSirMsgQ *pLimMsg, tANI_U8 fRspReqd);

@@ -10033,25 +10033,26 @@ static hdd_adapter_t* hdd_alloc_station_adapter( hdd_context_t *pHddCtx, tSirMac
       hdd_set_needed_headroom(pWlanDev, pWlanDev->hard_header_len);
       pWlanDev->hard_header_len += HDD_HW_NEEDED_HEADROOM;
 
-      if (pHddCtx->cfg_ini->enableIPChecksumOffload)
-         pWlanDev->features |= NETIF_F_HW_CSUM;
-      else if (pHddCtx->cfg_ini->enableTCPChkSumOffld)
-         pWlanDev->features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
-         pWlanDev->features |= NETIF_F_RXCSUM;
-      hdd_set_station_ops( pAdapter->dev );
+if (pHddCtx->cfg_ini->enableIPChecksumOffload) {
+    pWlanDev->features |= NETIF_F_HW_CSUM;
+} else if (pHddCtx->cfg_ini->enableTCPChkSumOffld) {
+    pWlanDev->features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
+}
+pWlanDev->features |= NETIF_F_RXCSUM;
 
-      pWlanDev->destructor = free_netdev;
-      pWlanDev->ieee80211_ptr = &pAdapter->wdev ;
-      pWlanDev->tx_queue_len = HDD_NETDEV_TX_QUEUE_LEN;
-      pAdapter->wdev.wiphy = pHddCtx->wiphy;
-      pAdapter->wdev.netdev =  pWlanDev;
-      /* set pWlanDev's parent to underlying device */
-      SET_NETDEV_DEV(pWlanDev, pHddCtx->parent_dev);
-      hdd_wmm_init( pAdapter );
-      hdd_adapter_runtime_suspend_init(pAdapter);
-   }
+hdd_set_station_ops(pAdapter->dev);
 
-   return pAdapter;
+pWlanDev->destructor = free_netdev;
+pWlanDev->ieee80211_ptr = &pAdapter->wdev;
+pWlanDev->tx_queue_len = HDD_NETDEV_TX_QUEUE_LEN;
+pAdapter->wdev.wiphy = pHddCtx->wiphy;
+pAdapter->wdev.netdev = pWlanDev;
+/* set pWlanDev's parent to underlying device */
+SET_NETDEV_DEV(pWlanDev, pHddCtx->parent_dev);
+hdd_wmm_init(pAdapter);
+hdd_adapter_runtime_suspend_init(pAdapter);
+}
+return pAdapter;
 }
 
 VOS_STATUS hdd_register_interface( hdd_adapter_t *pAdapter, tANI_U8 rtnl_lock_held )
@@ -13944,31 +13945,35 @@ static void hdd_state_info_dump(char **buf_ptr, uint16_t *size)
 
 	status = hdd_get_front_adapter(hdd_ctx_ptr, &adapter_node);
 
-	while (NULL != adapter_node && VOS_STATUS_SUCCESS == status) {
-		adapter = adapter_node->pAdapter;
-		if (adapter->dev)
-			len += scnprintf(buf + len, *size - len,
-				"\n device name: %s", adapter->dev->name);
-			len += scnprintf(buf + len, *size - len,
-				"\n device_mode: %d", adapter->device_mode);
-		switch (adapter->device_mode) {
-		case WLAN_HDD_INFRA_STATION:
-		case WLAN_HDD_P2P_CLIENT:
-			hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
-			len += scnprintf(buf + len, *size - len,
-				"\n connState: %d",
-				hdd_sta_ctx->conn_info.connState);
-			break;
+while (NULL != adapter_node && VOS_STATUS_SUCCESS == status) {
+    adapter = adapter_node->pAdapter;
 
-		default:
-			break;
-		}
-		status = hdd_get_next_adapter(hdd_ctx_ptr, adapter_node, &next);
-		adapter_node = next;
-	}
+    if (adapter->dev) {
+        len += scnprintf(buf + len, *size - len,
+                         "\n device name: %s", adapter->dev->name);
+        len += scnprintf(buf + len, *size - len,
+                         "\n device_mode: %d", adapter->device_mode);
 
-	*size -= len;
-	*buf_ptr += len;
+        switch (adapter->device_mode) {
+            case WLAN_HDD_INFRA_STATION:
+            case WLAN_HDD_P2P_CLIENT:
+                hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
+                len += scnprintf(buf + len, *size - len,
+                                 "\n connState: %d",
+                                 hdd_sta_ctx->conn_info.connState);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    status = hdd_get_next_adapter(hdd_ctx_ptr, adapter_node, &next);
+    adapter_node = next;
+}
+
+*size -= len;
+*buf_ptr += len;
 }
 
 /**
