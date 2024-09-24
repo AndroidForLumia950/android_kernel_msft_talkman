@@ -55,7 +55,9 @@ jobs:
         run: echo "FINAL_ZIP=Perf-kernel-$(date +%y%m%d-%H%M).zip" >> $GITHUB_ENV
         
       - name: Zip release
-        run: cd ./${ANYKERNEL3_DIR} | zip -r9 $FINAL_ZIP ./*
+        run: |
+          cd ./${ANYKERNEL3_DIR}
+          zip -r9 $FINAL_ZIP ./*
 
       # Continue on error in the following steps to make sure releases still get made even if one of the methods fails
 
