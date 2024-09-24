@@ -55,7 +55,8 @@ jobs:
         run: echo "FINAL_ZIP=Perf-kernel-$(date +%y%m%d-%H%M).zip" >> $GITHUB_ENV
         
       - name: Zip release
-        run: zip -r9 -j $FINAL_ZIP $DIR${ANYKERNEL3_DIR}/*
+        working-directory: ./${{ ANYKERNEL3_DIR }}
+        run: zip -r9 $FINAL_ZIP ./*
 
       # Continue on error in the following steps to make sure releases still get made even if one of the methods fails
 
@@ -78,10 +79,9 @@ jobs:
             -f tag_name="${RELEASE_VERSION}" \
             --jq ".body" > "${CHANGELOG_FILE}"
           cat "${CHANGELOG_FILE}"
-          gh release create "${RELEASE_VERSION}" -F "${CHANGELOG_FILE}" $PRERELEASE ./$FINAL_ZIP
+          gh release create "${RELEASE_VERSION}" -F "${CHANGELOG_FILE}" $PRERELEASE .${ANYKERNEL3_DIR}/$FINAL_ZIP
         shell: bash
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
         if: ${{ env.SNAPSHOT != 'true' }}
