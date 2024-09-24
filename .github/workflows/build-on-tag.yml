@@ -1,0 +1,88 @@
+name: Release tagged build
+
+on:
+  push:
+    tags: [ '*' ]
+
+env:
+  CROSS_COMPILE_PREFIX: /gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu/bin/aarch64-linux-gnu-
+  IMAGE: /arch/arm64/boot/Image.gz-dtb
+  ANYKERNEL3_DIR: /anykernel
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.ref_name }}
+      RELEASE_VERSION: ${{ github.ref_name }}
+      SNAPSHOT: ${{ endsWith(github.ref_name, '-snapshot') || contains(github.event.head_commit.message, '[snapshot]') }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 32
+
+      - name: Cache toolchain
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ./gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu
+          key: ${{ runner.os }}-gcc8.2-${{ github.sha }}
+          restore-keys: |
+              ${{ runner.os }}-gcc8.2-
+
+      - name: Get toolchain
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: wget https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
+
+      - name: Unpack toolchain
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: tar xf gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
+          
+      - name: Get current path
+        run: echo "DIR=$(pwd)" >> $GITHUB_ENV
+          
+      - name: Build defconfig
+        run: make ARCH=arm64 lineageos_bullhead_defconfig
+
+      - name: Build kernel
+        run: make ARCH=arm64 CROSS_COMPILE=$DIR${CROSS_COMPILE_PREFIX} -j$(nproc)
+
+      - name: Copy kernel to release dir
+        run: cp $DIR${IMAGE} $DIR${ANYKERNEL3_DIR}
+
+      - name: Make name for zip
+        run: echo "FINAL_ZIP=Perf-kernel-$(date +%y%m%d-%H%M).zip" >> $GITHUB_ENV
+        
+      - name: Zip release
+        run: |
+          cd ./${ANYKERNEL3_DIR}
+          zip -r9 $FINAL_ZIP ./*
+
+      # Continue on error in the following steps to make sure releases still get made even if one of the methods fails
+
+      - name: Delete old release if it already exists
+        run: gh release delete --yes "${RELEASE_VERSION}"
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release under current tag
+        run: |
+          PRERELEASE=""
+          if [[ "$SNAPSHOT" == "true" ]]; then
+            PRERELEASE="--prerelease"
+          fi
+          export "CHANGELOG_FILE=$(mktemp --suffix=.md)"
+          echo "CHANGELOG_FILE=${CHANGELOG_FILE}" >> $GITHUB_ENV
+          gh api --method POST -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="${RELEASE_VERSION}" \
+            --jq ".body" > "${CHANGELOG_FILE}"
+          cat "${CHANGELOG_FILE}"
+          gh release create "${RELEASE_VERSION}" -F "${CHANGELOG_FILE}" $PRERELEASE .${ANYKERNEL3_DIR}/$FINAL_ZIP
+        shell: bash
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ env.SNAPSHOT != 'true' }}
