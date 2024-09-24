@@ -26,7 +26,7 @@ jobs:
         run: wget https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
 
       - name: Unpack toolchain
-        run: tar xf https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
+        run: tar xf gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
           
       - name: Get current path
         run: echo "DIR=$(pwd)" >> $GITHUB_ENV
