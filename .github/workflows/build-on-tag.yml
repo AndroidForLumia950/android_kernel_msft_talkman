@@ -5,7 +5,7 @@ on:
     tags: [ '*' ]
 
 env:
-  CROSS_COMPILE_PREFIX: /aarch64-linux-android-4.9/bin/aarch64-linux-android-
+  CROSS_COMPILE_PREFIX: /gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu/bin/aarch64-linux-gnu-
   IMAGE: /arch/arm64/boot/Image.gz-dtb
   ANYKERNEL3_DIR: /anykernel
 
@@ -21,6 +21,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 32
+
+      - name: Get toolchain
+        run: wget https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
+
+      - name: Unpack toolchain
+        run: tar xf https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
           
       - name: Get current path
         run: echo "DIR=$(pwd)" >> $GITHUB_ENV
