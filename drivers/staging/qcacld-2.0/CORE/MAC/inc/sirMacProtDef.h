@@ -148,6 +148,7 @@
 #define SIR_MAC_ACTION_WME            17
 #define SIR_MAC_ACTION_FST            18
 #define SIR_MAC_ACTION_VHT            21
+#define SIR_MAC_ACTION_MAX            256
 
 #define SIR_MAC_ACTION_TX             1
 #define SIR_MAC_ACTION_RX             2
@@ -1060,8 +1061,7 @@ typedef __ani_attr_pre_packed struct sSirMacWapiInfo
 {
     tANI_U8        length;
     tANI_U8        info[SIR_MAC_MAX_IE_LENGTH];
-} __ani_attr_packed tSirMacWapiInfo, *tpSirMacWapiInfo,
-    tSirMacWapiInfo, *tpSirMacWapiInfo;
+} __ani_attr_packed tSirMacWapiInfo, *tpSirMacWapiInfo;
 
 typedef __ani_attr_pre_packed struct sSirMacFHParamSet
 {

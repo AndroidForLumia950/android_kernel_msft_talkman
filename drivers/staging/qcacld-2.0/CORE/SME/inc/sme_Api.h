@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -73,6 +73,7 @@
 #define SME_GLOBAL_CLASSC_STATS   8
 #define SME_GLOBAL_CLASSD_STATS  16
 #define SME_PER_STA_STATS        32
+#define SME_PER_CHAIN_RSSI_STATS 64
 
 #define SME_INVALID_COUNTRY_CODE "XX"
 
@@ -248,6 +249,39 @@ struct sme_ap_find_request_req{
     const u_int8_t* request_data;
 };
 #endif /* WLAN_FEATURE_APFIND */
+
+/**
+ * struct sme_oem_capability - OEM capability to be exchanged between host
+ *                             and userspace
+ * @ftm_rr: FTM range report capability bit
+ * @lci_capability: LCI capability bit
+ * @reserved1: reserved
+ * @reserved2: reserved
+ */
+struct sme_oem_capability {
+	uint32_t ftm_rr:1;
+	uint32_t lci_capability:1;
+	uint32_t reserved1:30;
+	uint32_t reserved2;
+};
+
+/*
+ * struct sme_5g_pref_params : 5G preference params to be read from ini
+ * @rssi_boost_threshold_5g: RSSI threshold above which 5 GHz is favored
+ * @rssi_boost_factor_5g: Factor by which 5GHz RSSI is boosted
+ * @max_rssi_boost_5g: Maximum boost that can be applied to 5GHz RSSI
+ * @rssi_penalize_threshold_5g: RSSI threshold below which 5G is not favored
+ * @rssi_penalize_factor_5g: Factor by which 5GHz RSSI is penalized
+ * @max_rssi_penalize_5g: Maximum penalty that can be applied to 5G RSSI
+ */
+struct sme_5g_band_pref_params {
+	int8_t      rssi_boost_threshold_5g;
+	uint8_t     rssi_boost_factor_5g;
+	uint8_t     max_rssi_boost_5g;
+	int8_t      rssi_penalize_threshold_5g;
+	uint8_t     rssi_penalize_factor_5g;
+	uint8_t     max_rssi_penalize_5g;
+};
 
 /*-------------------------------------------------------------------------
   Function declarations and documentation
@@ -1908,6 +1942,11 @@ eHalStatus sme_OemDataReq(tHalHandle hHal,
                                        tOemDataReqConfig *,
                                        tANI_U32 *pOemDataReqID);
 
+VOS_STATUS sme_oem_update_capability(tHalHandle hHal,
+				     struct sme_oem_capability *cap);
+VOS_STATUS sme_oem_get_capability(tHalHandle hHal,
+				  struct sme_oem_capability *cap);
+
 #endif /*FEATURE_OEM_DATA_SUPPORT*/
 
 
@@ -2750,6 +2789,9 @@ eHalStatus sme_SetRoamScanControl(tHalHandle hHal, tANI_U8 sessionId,
 eHalStatus sme_UpdateIsFastRoamIniFeatureEnabled(tHalHandle hHal,
                                                  tANI_U8 sessionId,
         const v_BOOL_t isFastRoamIniFeatureEnabled);
+
+eHalStatus sme_config_fast_roaming(tHalHandle hhal, tANI_U8 session_id,
+				   const bool is_fast_roam_enabled);
 
 /*--------------------------------------------------------------------------
   \brief sme_UpdateIsMAWCIniFeatureEnabled() -
@@ -3670,6 +3712,7 @@ eHalStatus sme_SetHT2040Mode(tHalHandle hHal, tANI_U8 sessionId,
 
 eHalStatus sme_getRegInfo(tHalHandle hHal, tANI_U8 chanId,
                           tANI_U32 *regInfo1, tANI_U32 *regInfo2);
+uint32_t sme_get_wni_dot11_mode(tHalHandle hal);
 
 #ifdef FEATURE_WLAN_TDLS
 eHalStatus sme_UpdateFwTdlsState(tHalHandle hHal, void *psmeTdlsParams,
@@ -3919,15 +3962,6 @@ eHalStatus sme_UpdateDFSScanMode(tHalHandle hHal,
   \sa
   --------------------------------------------------------------------------*/
 v_BOOL_t sme_GetDFSScanMode(tHalHandle hHal);
-
-/* ---------------------------------------------------------------------------
-    \fn sme_staInMiddleOfRoaming
-    \brief  This function returns TRUE if STA is in the middle of roaming state
-    \param  hHal - HAL handle for device
-    \param  sessionId - Session identifier
-    \- return TRUE or FALSE
-    -------------------------------------------------------------------------*/
-tANI_BOOLEAN sme_staInMiddleOfRoaming(tHalHandle hHal, tANI_U8 sessionId);
 
 /* ---------------------------------------------------------------------------
     \fn sme_PsOffloadIsStaInPowerSave
@@ -4496,4 +4530,48 @@ eHalStatus sme_enable_disable_chanavoidind_event(tHalHandle hHal,
 							tANI_U8 set_value);
 eHalStatus sme_remove_bssid_from_scan_list(tHalHandle hal,
 	tSirMacAddr bssid);
+eHalStatus sme_register_p2p_ack_ind_callback(tHalHandle hal,
+                                       sir_p2p_ack_ind_callback callback);
+void sme_set_allowed_action_frames(tHalHandle hal, uint32_t bitmap0);
+void sme_set_5g_band_pref(tHalHandle hal_handle,
+                                struct sme_5g_band_pref_params *pref_params);
+
+/**
+ * sme_set_random_mac() - Set random mac address filter
+ * @hal: hal handle for getting global mac struct
+ * @callback: callback to be invoked for response from firmware
+ * @session_id: interface id
+ * @random_mac: random mac address to be set
+ * @context: parameter to callback
+ *
+ * This function is used to set random mac address filter for action frames
+ * which are send with the same address, callback is invoked when corresponding
+ * event from firmware has come.
+ *
+ * Return: eHalStatus enumeration.
+ */
+eHalStatus sme_set_random_mac(tHalHandle hal,
+			      action_frame_random_filter_callback callback,
+			      uint32_t session_id, uint8_t *random_mac,
+			      void *context);
+
+/**
+ * sme_clear_random_mac() - clear random mac address filter
+ * @hal: HAL handle
+ * @session_id: interface id
+ * @random_mac: random mac address to be cleared
+ *
+ * This function is used to clear the random mac address filters
+ * which are set with sme_set_random_mac
+ *
+ * Return: eHalStatus enumeration.
+ */
+eHalStatus sme_clear_random_mac(tHalHandle hal, uint32_t session_id,
+				uint8_t *random_mac);
+
+#ifdef WLAN_POWER_DEBUGFS
+eHalStatus sme_power_debug_stats_req(tHalHandle hal, void (*callback_fn)
+			(struct power_stats_response *response,
+			void *context), void *power_stats_context);
+#endif
 #endif //#if !defined( __SME_API_H )

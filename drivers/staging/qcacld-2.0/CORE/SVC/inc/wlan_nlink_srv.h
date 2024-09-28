@@ -75,8 +75,8 @@ int nl_srv_bcast(struct sk_buff *skb, int mcgroup_id, int app_id);
 int nl_srv_ucast(struct sk_buff *skb, int dst_pid, int flag);
 int nl_srv_bcast(struct sk_buff *skb);
 #endif
-int nl_srv_is_initialized(void);
 
+int nl_srv_is_initialized(void);
 #else
 static inline int nl_srv_init(void) { return 0; }
 
@@ -112,7 +112,7 @@ static inline int nl_srv_bcast(struct sk_buff *skb)
 	return 0;
 }
 
-static inline int nl_srv_is_initialized()
+static inline int nl_srv_is_initialized(void)
 {
 	return -EPERM;
 }

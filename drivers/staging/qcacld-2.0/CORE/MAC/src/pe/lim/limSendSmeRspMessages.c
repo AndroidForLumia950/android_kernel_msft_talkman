@@ -970,9 +970,6 @@ limSendSmeScanRsp(tpAniSirGlobal pMac, tANI_U16 length,
             vos_mem_copy( (tANI_U8 *) &pDesc->bssId,
                           (tANI_U8 *) &ptemp->bssDescription.bssId,
                            ptemp->bssDescription.length);
-            limLog(pMac, LOG2, FL("ScanRsp : msgLen %d, bssDescr Len=%d BssID "MAC_ADDRESS_STR),
-                          msgLen, ptemp->bssDescription.length,
-                          MAC_ADDR_ARRAY(ptemp->bssDescription.bssId));
 
             pSirSmeScanRsp->sessionId   = smesessionId;
             pSirSmeScanRsp->transcationId = smetranscationId;
@@ -3015,8 +3012,10 @@ void limHandleCSAoffloadMsg(tpAniSirGlobal pMac,tpSirMsgQ MsgQ)
       mmhMsg.bodyval = 0;
       PELOG1(limLog(pMac, LOG1, FL("Sending eWNI_SME_CSA_OFFLOAD_EVENT to SME. "));)
       MTRACE(macTraceMsgTx(pMac, psessionEntry->peSessionId, mmhMsg.type));
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
       limDiagEventReport(pMac, WLAN_PE_DIAG_SWITCH_CHL_REQ_EVENT, psessionEntry,
                          eSIR_SUCCESS, eSIR_SUCCESS);
+#endif
       limReInitScanResults(pMac);
       limSysProcessMmhMsgApi(pMac, &mmhMsg,  ePROT);
    }

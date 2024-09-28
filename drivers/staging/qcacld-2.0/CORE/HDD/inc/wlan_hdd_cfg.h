@@ -253,6 +253,15 @@
 #define CFG_ADVERTISE_CONCURRENT_OPERATION_MIN     ( 0 )
 #define CFG_ADVERTISE_CONCURRENT_OPERATION_MAX     ( 1 )
 
+/*
+ * Force softap to 11n, when gSapForce11NFor11AC is set to 1 from ini
+ * despite of hostapd.conf request for 11ac
+ */
+#define CFG_SAP_FORCE_11N_FOR_11AC_NAME    "gSapForce11NFor11AC"
+#define CFG_SAP_FORCE_11N_FOR_11AC_MIN     (0)
+#define CFG_SAP_FORCE_11N_FOR_11AC_MAX     (1)
+#define CFG_SAP_FORCE_11N_FOR_11AC_DEFAULT (0)
+
 typedef enum
 {
     eHDD_DOT11_MODE_AUTO = 0, //covers all things we support
@@ -629,6 +638,10 @@ enum
 //Not to use CFG default because if no registry setting, this is ignored by SME.
 #define CFG_MAX_TX_POWER_DEFAULT                WNI_CFG_CURRENT_TX_POWER_LEVEL_STAMAX
 
+#define CFG_TX_POWER_CTRL_NAME                 "gAllowTPCfromAP"
+#define CFG_TX_POWER_CTRL_DEFAULT              (1)
+#define CFG_TX_POWER_CTRL_MIN                  (0)
+#define CFG_TX_POWER_CTRL_MAX                  (1)
 
 #define CFG_LOW_GAIN_OVERRIDE_NAME             "gLowGainOverride"
 #define CFG_LOW_GAIN_OVERRIDE_MIN              WNI_CFG_LOW_GAIN_OVERRIDE_STAMIN
@@ -982,13 +995,13 @@ enum
 
 #define CFG_RRM_OPERATING_CHAN_MAX_DURATION_NAME         "gRrmOperChanMax" //section 11.10.3 IEEE std. 802.11k-2008
 #define CFG_RRM_OPERATING_CHAN_MAX_DURATION_MIN          (0)             //Maxduration = 2^(maxDuration - 4) * bcnIntvl.
-#define CFG_RRM_OPERATING_CHAN_MAX_DURATION_MAX          (8)
-#define CFG_RRM_OPERATING_CHAN_MAX_DURATION_DEFAULT      (3)             //max duration = 2^-1 * bcnIntvl (50% of bcn intvl)
+#define CFG_RRM_OPERATING_CHAN_MAX_DURATION_MAX          (7)
+#define CFG_RRM_OPERATING_CHAN_MAX_DURATION_DEFAULT      (4)             //max duration = 2^0 * bcnIntvl (100% of bcn intvl)
 
 #define CFG_RRM_NON_OPERATING_CHAN_MAX_DURATION_NAME     "gRrmNonOperChanMax" //Same as above.
 #define CFG_RRM_NON_OPERATING_CHAN_MAX_DURATION_MIN      (0)
-#define CFG_RRM_NON_OPERATING_CHAN_MAX_DURATION_MAX      (8)
-#define CFG_RRM_NON_OPERATING_CHAN_MAX_DURATION_DEFAULT  (3)
+#define CFG_RRM_NON_OPERATING_CHAN_MAX_DURATION_MAX      (7)
+#define CFG_RRM_NON_OPERATING_CHAN_MAX_DURATION_DEFAULT  (4)
 
 #define CFG_RRM_MEAS_RANDOMIZATION_INTVL_NAME            "gRrmRandnIntvl"
 #define CFG_RRM_MEAS_RANDOMIZATION_INTVL_MIN             (10)
@@ -1005,7 +1018,7 @@ enum
  * Comma is used as a separator for each byte.
  */
 #define CFG_RM_CAPABILITY_NAME            "rm_capability"
-#define CFG_RM_CAPABILITY_DEFAULT         "73,00,6D,00,04"
+#define CFG_RM_CAPABILITY_DEFAULT         "73,00,91,00,04"
 #endif
 
 #define CFG_QOS_IMPLICIT_SETUP_ENABLED_NAME                 "ImplicitQosIsEnabled"
@@ -1342,6 +1355,11 @@ typedef enum
 #define CFG_VHT_ENABLE_2x2_CAP_FEATURE_MIN     ( 0 )
 #define CFG_VHT_ENABLE_2x2_CAP_FEATURE_MAX     ( 1 )
 #define CFG_VHT_ENABLE_2x2_CAP_FEATURE_DEFAULT ( 0 )
+
+#define CFG_ENABLE_VHT_DYNAMIC_STA_CHAINMASK    "gEnableDynamicSTAChainMask"
+#define CFG_ENABLE_VHT_DYNAMIC_STA_CHAINMASK_MIN     (0)
+#define CFG_ENABLE_VHT_DYNAMIC_STA_CHAINMASK_MAX     (1)
+#define CFG_ENABLE_VHT_DYNAMIC_STA_CHAINMASK_DEFAULT (0)
 
 /*
  * Valid chain mask values.
@@ -2335,19 +2353,21 @@ typedef enum
 #define CFG_ENABLE_VHT_FOR_24GHZ_MAX              (1)
 #define CFG_ENABLE_VHT_FOR_24GHZ_DEFAULT          (0)
 
+/*
+ * Parameter to control VHT support based on vendor ie in 2.4 GHz band
+ * This parameter will enable SAP to read VHT capability in vendor ie in Assoc
+ * Req and send VHT caps in Resp to establish connection in VHT Mode.
+ */
+#define CFG_ENABLE_VENDOR_VHT_FOR_24GHZ_NAME      "gEnableVendorVhtFor24GHzBand"
+#define CFG_ENABLE_VENDOR_VHT_FOR_24GHZ_MIN       (0)
+#define CFG_ENABLE_VENDOR_VHT_FOR_24GHZ_MAX       (1)
+#define CFG_ENABLE_VENDOR_VHT_FOR_24GHZ_DEFAULT   (1)
+
 
 #define CFG_MAX_MEDIUM_TIME                      "gMaxMediumTime"
 #define CFG_MAX_MEDIUM_TIME_STAMIN               WNI_CFG_MAX_MEDIUM_TIME_STAMIN
 #define CFG_MAX_MEDIUM_TIME_STAMAX               WNI_CFG_MAX_MEDIUM_TIME_STAMAX
 #define CFG_MAX_MEDIUM_TIME_STADEFAULT           WNI_CFG_MAX_MEDIUM_TIME_STADEF
-
-/*
- * SCAN Offload
- */
-#define CFG_SCAN_OFFLOAD_NAME                     "gEnableDirectedScanOffload"
-#define CFG_SCAN_OFFLOAD_DISABLE                  ( 0 )
-#define CFG_SCAN_OFFLOAD_ENABLE                   ( 1 )
-#define CFG_SCAN_OFFLOAD_DEFAULT                  ( CFG_SCAN_OFFLOAD_DISABLE )
 
 /*
  * Enable legacy fast roaming (LFR) on STA link during concurrent sessions
@@ -2715,12 +2735,12 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_SET_TXPOWER_LIMIT2G_NAME               "TxPower2g"
 #define CFG_SET_TXPOWER_LIMIT2G_MIN                ( 0 )
 #define CFG_SET_TXPOWER_LIMIT2G_MAX                ( 30 )
-#define CFG_SET_TXPOWER_LIMIT2G_DEFAULT            ( 15 )
+#define CFG_SET_TXPOWER_LIMIT2G_DEFAULT            ( 30 )
 
 #define CFG_SET_TXPOWER_LIMIT5G_NAME               "TxPower5g"
 #define CFG_SET_TXPOWER_LIMIT5G_MIN                ( 0 )
 #define CFG_SET_TXPOWER_LIMIT5G_MAX                ( 30 )
-#define CFG_SET_TXPOWER_LIMIT5G_DEFAULT            ( 15 )
+#define CFG_SET_TXPOWER_LIMIT5G_DEFAULT            ( 30 )
 
 #ifdef QCA_LL_TX_FLOW_CT
 /* Default, single interface case flow control parameters */
@@ -2874,6 +2894,11 @@ This feature requires the dependent cfg.ini "gRoamPrefer5GHz" set to 1 */
 #define CFG_TCP_DELACK_THRESHOLD_LOW_DEFAULT       ( 1000 )
 #define CFG_TCP_DELACK_THRESHOLD_LOW_MIN           ( 0 )
 #define CFG_TCP_DELACK_THRESHOLD_LOW_MAX           ( 10000 )
+
+#define CFG_TCP_DELACK_TIMER_COUNT                 "gTcpDelAckTimerCount"
+#define CFG_TCP_DELACK_TIMER_COUNT_DEFAULT         ( 30 )
+#define CFG_TCP_DELACK_TIMER_COUNT_MIN             ( 1 )
+#define CFG_TCP_DELACK_TIMER_COUNT_MAX             ( 1000 )
 
 
 /* TCP_TX_HIGH_TPUT_THRESHOLD specifies the threshold of packets transmitted
@@ -3805,17 +3830,28 @@ enum dot11p_mode {
 #define CFG_EDCA_BE_AIFS_VALUE_MAX        (15)
 #define CFG_EDCA_BE_AIFS_VALUE_DEFAULT    (3)
 
+#define CFG_TGT_GTX_USR_CFG_NAME      "tgt_gtx_usr_cfg"
+#define CFG_TGT_GTX_USR_CFG_MIN       (0)
+#define CFG_TGT_GTX_USR_CFG_MAX       (32)
+#define CFG_TGT_GTX_USR_CFG_DEFAULT   (32)
+
+#define CFG_CH_AVOID_SAP_RESTART_NAME    "sap_ch_avoid_restart"
+#define CFG_CH_AVOID_SAP_RESTART_MIN     (0)
+#define CFG_CH_AVOID_SAP_RESTART_MAX     (1)
+#define CFG_CH_AVOID_SAP_RESTART_DEFAULT (0)
+
+#ifdef WLAN_FEATURE_RX_WAKELOCK
+
 #define CFG_RX_WAKELOCK_TIMEOUT_NAME         "rx_wakelock_timeout"
 #define CFG_RX_WAKELOCK_TIMEOUT_DEFAULT      (50)
 #define CFG_RX_WAKELOCK_TIMEOUT_MIN          (0)
 #define CFG_RX_WAKELOCK_TIMEOUT_MAX          (100)
+
+#endif
 /*
  * In static display use case when APPS is in stand alone power save mode enable
  * active offload mode which helps FW to filter out MC/BC data packets to avoid
  * APPS wake up and save more power.
- *
- * By default enable active mode offload as it helps to save more power in
- * static display usecase(APPS stand alone power collapse).
  *
  * If active mode offload(gActiveModeOffload=1) is enabled then all applicable
  * data offload/filtering is enabled immediately in FW once config is available
@@ -3829,6 +3865,74 @@ enum dot11p_mode {
 #define CFG_ACTIVE_MODE_OFFLOAD_MIN        (0)
 #define CFG_ACTIVE_MODE_OFFLOAD_MAX        (1)
 #define CFG_ACTIVE_MODE_OFFLOAD_DEFAULT    (0)
+
+/*
+ * maximum interval (in seconds) for a
+ * single scan plan supported by the device.
+ */
+#define CFG_MAX_SCHED_SCAN_PLAN_INT_NAME       "g_max_sched_scan_plan_int"
+#define CFG_MAX_SCHED_SCAN_PLAN_INT_MIN        (1)
+#define CFG_MAX_SCHED_SCAN_PLAN_INT_MAX        (7200)
+#define CFG_MAX_SCHED_SCAN_PLAN_INT_DEFAULT    (3600)
+
+/*
+ * maximum number of iterations for a single
+ * scan plan supported by the device.
+ */
+#define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_NAME       "g_max_sched_scan_plan_itrns"
+#define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_MIN        (1)
+#define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_MAX        (100)
+#define CFG_MAX_SCHED_SCAN_PLAN_ITRNS_DEFAULT    (10)
+
+/*
+ * 5G preference parameters for boosting RSSI
+ * enable_band_specific_pref: Enable preference for 5G from INI.
+ * raise_rssi_thresh_5g: A_band_boost_threshold above which 5 GHz is favored.
+ * raise_factor_5g : Factor by which 5GHz RSSI is boosted.
+ * max_raise_rssi_5g: Maximum boost that can be applied to 5GHz RSSI.
+ */
+
+#define CFG_ENABLE_5G_BAND_PREF_NAME             "enable_5g_band_pref"
+#define CFG_ENABLE_5G_BAND_PREF_MIN              (0)
+#define CFG_ENABLE_5G_BAND_PREF_MAX              (1)
+#define CFG_ENABLE_5G_BAND_PREF_DEFAULT          (0)
+
+#define CFG_5G_RSSI_BOOST_THRESHOLD_NAME         "5g_rssi_boost_threshold"
+#define CFG_5G_RSSI_BOOST_THRESHOLD_MIN          (-55)
+#define CFG_5G_RSSI_BOOST_THRESHOLD_MAX          (-70)
+#define CFG_5G_RSSI_BOOST_THRESHOLD_DEFAULT      (-60)
+
+#define CFG_5G_RSSI_BOOST_FACTOR_NAME            "5g_rssi_boost_factor"
+#define CFG_5G_RSSI_BOOST_FACTOR_MIN             (0)
+#define CFG_5G_RSSI_BOOST_FACTOR_MAX             (2)
+#define CFG_5G_RSSI_BOOST_FACTOR_DEFAULT         (1)
+
+#define CFG_5G_MAX_RSSI_BOOST_NAME               "5g_max_rssi_boost"
+#define CFG_5G_MAX_RSSI_BOOST_MIN                (0)
+#define CFG_5G_MAX_RSSI_BOOST_MAX                (20)
+#define CFG_5G_MAX_RSSI_BOOST_DEFAULT            (10)
+
+/*
+ * 5G preference parameters for penalizing RSSI
+ * drop_rssi_thresh_5g: threshold below which 5 GHz is not favored.
+ * drop_factor_5g : Factor by which a weak 5GHz RSSI is penalized.
+ * max_drop_rssi_5g: Maximum penalty that can be applied to 5GHz RSSI.
+ */
+
+#define CFG_5G_RSSI_PENALIZE_THRESHOLD_NAME      "5g_rssi_penalize_threshold"
+#define CFG_5G_RSSI_PENALIZE_THRESHOLD_MIN       (-65)
+#define CFG_5G_RSSI_PENALIZE_THRESHOLD_MAX       (-80)
+#define CFG_5G_RSSI_PENALIZE_THRESHOLD_DEFAULT   (-70)
+
+#define CFG_5G_RSSI_PENALIZE_FACTOR_NAME         "5g_rssi_penalize_factor"
+#define CFG_5G_RSSI_PENALIZE_FACTOR_MIN          (0)
+#define CFG_5G_RSSI_PENALIZE_FACTOR_MAX          (2)
+#define CFG_5G_RSSI_PENALIZE_FACTOR_DEFAULT      (1)
+
+#define CFG_5G_MAX_RSSI_PENALIZE_NAME            "5g_max_rssi_penalize"
+#define CFG_5G_MAX_RSSI_PENALIZE_MIN             (0)
+#define CFG_5G_MAX_RSSI_PENALIZE_MAX             (20)
+#define CFG_5G_MAX_RSSI_PENALIZE_DEFAULT         (10)
 
 /* enable/disable probe request whiltelist IE feature */
 #define CFG_PRB_REQ_IE_WHITELIST_NAME    "g_enable_probereq_whitelist_ies"
@@ -3888,6 +3992,32 @@ enum dot11p_mode {
  */
 #define CFG_PROBE_REQ_OUI_NAME    "gProbeReqOUIs"
 #define CFG_PROBE_REQ_OUI_DEFAULT ""
+
+/*
+ * <ini>
+ * arp_ac_category - ARP access category
+ * @Min: 0
+ * @Max: 3
+ * @Default: 3
+ *
+ * Firmware by default categorizes ARP packets with VOICE TID.
+ * This ini shall be used to override the default configuration.
+ * Access category enums are referenced in ieee80211_common.h
+ * WME_AC_BE = 0 (Best effort)
+ * WME_AC_BK = 1 (Background)
+ * WME_AC_VI = 2 (Video)
+ * WME_AC_VO = 3 (Voice)
+ *
+ * Related: none
+ *
+ * Usage: Internal/External
+ *
+ * </ini>
+ */
+#define CFG_ARP_AC_CATEGORY                "arp_ac_category"
+#define CFG_ARP_AC_CATEGORY_MIN            (0)
+#define CFG_ARP_AC_CATEGORY_MAX            (3)
+#define CFG_ARP_AC_CATEGORY_DEFAULT        (3)
 
 
 /*---------------------------------------------------------------------------
@@ -3963,6 +4093,7 @@ struct hdd_config {
    v_U32_t       goLinkMonitorPeriod;
    v_U32_t       nBeaconInterval;
    v_U8_t        nTxPowerCap;   //In dBm
+   v_BOOL_t      allow_tpc_from_ap;
    v_BOOL_t      fIsLowGainOverride;
    v_U8_t        disablePacketFilter;
 #if defined WLAN_FEATURE_VOWIFI
@@ -4313,8 +4444,6 @@ struct hdd_config {
    char                        listOfNonDfsCountryCode[128];
    v_BOOL_t                    enableSSR;
    v_U32_t                     cfgMaxMediumTime;
-   v_BOOL_t                    enableVhtFor24GHzBand;
-   v_U8_t                      fScanOffload;
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
    /* Flag indicating whether legacy fast roam during concurrency is enabled in cfg.ini or not */
    v_BOOL_t                    bFastRoamInConIniFeatureEnabled;
@@ -4354,6 +4483,8 @@ struct hdd_config {
 #ifdef WLAN_FEATURE_11AC
    v_U8_t                      fVhtAmpduLenExponent;
    v_U32_t                     vhtMpduLen;
+   bool                        enableVhtFor24GHzBand;
+   bool                        enable_vendor_vht_for_24ghz_band;
 #endif
 #ifdef IPA_OFFLOAD
    v_U32_t                     IpaConfig;
@@ -4428,6 +4559,7 @@ struct hdd_config {
    v_U32_t                     busBandwidthComputeInterval;
    v_U32_t                     tcpDelackThresholdHigh;
    v_U32_t                     tcpDelackThresholdLow;
+   uint32_t                    tcpDelackTimerCount;
    uint32_t                    tcp_tx_high_tput_thres;
 #endif /* FEATURE_BUS_BANDWIDTH */
 #ifdef QCA_SUPPORT_TXRX_HL_BUNDLE
@@ -4641,8 +4773,28 @@ struct hdd_config {
    uint32_t                    edca_vi_aifs;
    uint32_t                    edca_bk_aifs;
    uint32_t                    edca_be_aifs;
+   bool                        enable_dynamic_sta_chainmask;
+   /* parameter to force sap into 11n */
+   bool                        sap_force_11n_for_11ac;
+
+   /* parameter to control GTX */
+   uint32_t                    tgt_gtx_usr_cfg;
+   bool                        sap_restrt_ch_avoid;
+#ifdef WLAN_FEATURE_RX_WAKELOCK
    uint32_t                    rx_wakelock_timeout;
+#endif
    bool                        active_mode_offload;
+   uint32_t                    max_sched_scan_plan_interval;
+   uint32_t                    max_sched_scan_plan_iterations;
+   /* 5G preference parameters for boosting RSSI */
+   bool                        enable_5g_band_pref;
+   int8_t                      rssi_boost_threshold_5g;
+   uint8_t                     rssi_boost_factor_5g;
+   uint8_t                     max_rssi_boost_5g;
+  /* 5G preference parameters for dropping RSSI*/
+   int8_t                      rssi_penalize_threshold_5g;
+   uint8_t                     rssi_penalize_factor_5g;
+   uint8_t                     max_rssi_penalize_5g;
 
    bool probe_req_ie_whitelist;
    /* probe request bit map ies */
@@ -4657,6 +4809,7 @@ struct hdd_config {
 
    /* Probe Request multiple vendor OUIs */
    uint8_t probe_req_ouis[MAX_PRB_REQ_VENDOR_OUI_INI_LEN];
+   uint32_t                    arp_ac_category;
 };
 
 typedef struct hdd_config hdd_config_t;

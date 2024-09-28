@@ -958,7 +958,6 @@ limSendHalStartScanReq(tpAniSirGlobal pMac, tANI_U8 channelNum, tLimLimHalScanSt
         SET_LIM_PROCESS_DEFD_MESGS(pMac, false);
 
         MTRACE(macTraceMsgTx(pMac, NO_SESSION, msg.type));
-        limLog(pMac, LOG1, FL("Channel %d"), channelNum);
 
             rc = wdaPostCtrlMsg(pMac, &msg);
         if (rc == eSIR_SUCCESS) {
@@ -2825,7 +2824,7 @@ limProcessMlmDisassocReqNtf(tpAniSirGlobal pMac, eHalStatus suspendStatus, tANI_
         goto end;
     }
     limLog(pMac, LOGE, FL("Process DisAssoc Req on sessionID %d Systemrole %d "
-    "reason code: %d mlmstate %d from: "MAC_ADDRESS_STR),
+        "reason code: %d mlmstate %d from: "MAC_ADDRESS_STR),
         pMlmDisassocReq->sessionId,
         GET_LIM_SYSTEM_ROLE(psessionEntry), pMlmDisassocReq->reasonCode,
         psessionEntry->limMlmState,
@@ -3713,24 +3712,25 @@ tLimMlmRemoveKeyCnf  mlmRemoveKeyCnf;
          (pStaDs->mlmStaContext.mlmState !=
                        eLIM_MLM_LINK_ESTABLISHED_STATE)))
   {
-/**
- * Received LIM_MLM_REMOVEKEY_REQ for STA
- * that does not have context or is in some
- * transit state. Log error.
- */
-limLog(pMac, LOGW,
-    FL("Received MLM_REMOVEKEYS_REQ for STA that either has no context or in some transit state, Addr = "));
-limPrintMacAddr(pMac, pMlmRemoveKeyReq->peerMacAddr, LOGW);
+     /**
+       * Received LIM_MLM_REMOVEKEY_REQ for STA
+       * that does not have context or in some
+       * transit state. Log error.
+       */
+      limLog( pMac, LOGW,
+          FL("Received MLM_REMOVEKEYS_REQ for STA that either has no context or in some transit state, Addr = "));
+      limPrintMacAddr( pMac, pMlmRemoveKeyReq->peerMacAddr, LOGW );
 
-// Prepare and Send LIM_MLM_REMOVEKEY_CNF
-mlmRemoveKeyCnf.resultCode = eSIR_SME_INVALID_PARAMETERS;
-mlmRemoveKeyCnf.sessionId = pMlmRemoveKeyReq->sessionId;
+      // Prepare and Send LIM_MLM_REMOVEKEY_CNF
+      mlmRemoveKeyCnf.resultCode = eSIR_SME_INVALID_PARAMETERS;
+      mlmRemoveKeyCnf.sessionId = pMlmRemoveKeyReq->sessionId;
 
-goto end; // Exit point
-}
 
-// No need for else since we are using goto
-staIdx = pStaDs->staIndex;
+      goto end;
+  }
+  else {
+    staIdx = pStaDs->staIndex;
+  }
 
 
 
@@ -3778,8 +3778,6 @@ limProcessMinChannelTimeout(tpAniSirGlobal pMac)
     if (pMac->lim.gLimMlmState == eLIM_MLM_WT_PROBE_RESP_STATE &&
         pMac->lim.gLimHalScanState != eLIM_HAL_FINISH_SCAN_WAIT_STATE)
     {
-        PELOG1(limLog(pMac, LOG1, FL("Scanning : min channel timeout occurred"));)
-
         /// Min channel timer timed out
         pMac->lim.limTimers.gLimPeriodicProbeReqTimer.sessionId = 0xff;
         limDeactivateAndChangeTimer(pMac, eLIM_MIN_CHANNEL_TIMER);
@@ -4842,9 +4840,8 @@ ePhyChanBondState limGet11ACPhyCBState(tpAniSirGlobal pMac, tANI_U8 channel, tAN
         return htSecondaryChannelOffset;
     }
 
-    if ( (htSecondaryChannelOffset
+    if (htSecondaryChannelOffset
                  == PHY_DOUBLE_CHANNEL_LOW_PRIMARY)
-       )
     {
         if ((channel + 2 ) == peerCenterChan )
             cbState =  PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_CENTERED;
@@ -4857,9 +4854,8 @@ ePhyChanBondState limGet11ACPhyCBState(tpAniSirGlobal pMac, tANI_U8 channel, tAN
                        FL("Invalid Channel Number = %d Center Chan = %d "),
                                  channel, peerCenterChan);
     }
-    if ( (htSecondaryChannelOffset
+    if (htSecondaryChannelOffset
                  == PHY_DOUBLE_CHANNEL_HIGH_PRIMARY)
-       )
     {
         if ((channel - 2 ) == peerCenterChan )
             cbState =  PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_CENTERED;

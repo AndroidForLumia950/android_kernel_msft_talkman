@@ -542,9 +542,8 @@ static int hdd_ocb_set_config_req(hdd_adapter_t *adapter,
 	cookie = hdd_request_cookie(hdd_request);
 
 	hddLog(LOG1, FL("Disabling queues"));
-	netif_tx_disable(adapter->dev);
-	netif_carrier_off(adapter->dev);
-
+	wlan_hdd_netif_queue_control(adapter, WLAN_NETIF_TX_DISABLE_N_CARRIER,
+				WLAN_CONTROL_PATH);
 	/* Call the SME API to set the config */
 	halStatus = sme_ocb_set_config(
 		((hdd_context_t *)adapter->pHddCtx)->hHal, cookie,
@@ -574,10 +573,10 @@ static int hdd_ocb_set_config_req(hdd_adapter_t *adapter,
 	 * OCB set config command successful.
 	 * Open the TX data path
 	 */
-	if (!hdd_ocb_register_sta(adapter)) {
-		netif_carrier_on(adapter->dev);
-		netif_tx_start_all_queues(adapter->dev);
-	}
+	if (!hdd_ocb_register_sta(adapter))
+		wlan_hdd_netif_queue_control(adapter,
+					WLAN_START_ALL_NETIF_QUEUE_N_CARRIER,
+					WLAN_CONTROL_PATH);
 
 	/* fall through */
 end:

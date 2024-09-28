@@ -1345,6 +1345,23 @@ limSendAssocRspMgmtFrame(tpAniSirGlobal pMac,
             PopulateDot11fVHTOperation( pMac, psessionEntry, &frm.VHTOperation);
             isVHTEnabled = eANI_BOOLEAN_TRUE;
         }
+
+        if (psessionEntry->vhtCapability &&
+            psessionEntry->vendor_vht_for_24ghz_sap &&
+            (pAssocReq != NULL) && pAssocReq->vendor2_ie.VHTCaps.present) {
+            limLog(pMac, LOG1,
+                        FL("Populate Vendor VHT IEs in Assoc Response"));
+            frm.vendor2_ie.present = 1;
+            frm.vendor2_ie.type =
+                     psessionEntry->vendor_specific_vht_ie_type;
+            frm.vendor2_ie.sub_type =
+                     psessionEntry->vendor_specific_vht_ie_sub_type;
+
+            frm.vendor2_ie.VHTCaps.present = 1;
+            PopulateDot11fVHTCaps(pMac, psessionEntry,
+                                    &frm.vendor2_ie.VHTCaps);
+            isVHTEnabled = true;
+        }
 #endif
 
         PopulateDot11fExtCap(pMac, isVHTEnabled, &frm.ExtCap, psessionEntry);
@@ -2239,6 +2256,23 @@ limSendAssocReqMgmtFrame(tpAniSirGlobal   pMac,
         PopulateDot11fVHTCaps( pMac, psessionEntry, &pFrm->VHTCaps );
         isVHTEnabled = eANI_BOOLEAN_TRUE;
     }
+    if (!isVHTEnabled &&
+                    psessionEntry->is_vendor_specific_vhtcaps) {
+        limLog(pMac, LOG1,
+                    FL("Populate Vendor VHT IEs in Assoc Request"));
+        pFrm->vendor2_ie.present = 1;
+        pFrm->vendor2_ie.type =
+                 psessionEntry->vendor_specific_vht_ie_type;
+        pFrm->vendor2_ie.sub_type =
+                 psessionEntry->vendor_specific_vht_ie_sub_type;
+
+        pFrm->vendor2_ie.VHTCaps.present = 1;
+        PopulateDot11fVHTCaps(pMac, psessionEntry,
+                                &pFrm->vendor2_ie.VHTCaps);
+        isVHTEnabled = true;
+    }
+
+
 #endif
     if (psessionEntry->is_ext_caps_present)
         PopulateDot11fExtCap( pMac, isVHTEnabled, &pFrm->ExtCap, psessionEntry);
@@ -2734,6 +2768,20 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
     }
     if (psessionEntry->is_ext_caps_present)
         PopulateDot11fExtCap(pMac, isVHTEnabled, &frm.ExtCap, psessionEntry);
+
+    if (!isVHTEnabled && psessionEntry->is_vendor_specific_vhtcaps) {
+        limLog(pMac, LOG1,
+                        FL("Populate Vendor VHT IEs in Re-Assoc Request"));
+        frm.vendor2_ie.present = 1;
+        frm.vendor2_ie.type =
+                        psessionEntry->vendor_specific_vht_ie_type;
+        frm.vendor2_ie.sub_type =
+                        psessionEntry->vendor_specific_vht_ie_sub_type;
+        frm.vendor2_ie.VHTCaps.present = 1;
+        PopulateDot11fVHTCaps(pMac, psessionEntry,
+                                &frm.vendor2_ie.VHTCaps);
+        isVHTEnabled = true;
+    }
 #endif
 
     nStatus = dot11fGetPackedReAssocRequestSize( pMac, &frm, &nPayload );
@@ -2871,12 +2919,12 @@ limSendReassocReqWithFTIEsMgmtFrame(tpAniSirGlobal     pMac,
 
 #if defined(WLAN_FEATURE_VOWIFI_11R) || defined(FEATURE_WLAN_ESE) || defined(FEATURE_WLAN_LFR)
     if ((NULL != psessionEntry->ftPEContext.pFTPreAuthReq) &&
-         (SIR_BAND_5_GHZ == limGetRFBand(
+         ( SIR_BAND_5_GHZ == limGetRFBand(
               psessionEntry->ftPEContext.pFTPreAuthReq->preAuthchannelNum)))
          txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
     else
 #endif
-     if((SIR_BAND_5_GHZ == limGetRFBand(psessionEntry->currentOperChannel)) ||
+     if( (SIR_BAND_5_GHZ == limGetRFBand(psessionEntry->currentOperChannel)) ||
                 (psessionEntry->pePersona == VOS_P2P_CLIENT_MODE) ||
                 (psessionEntry->pePersona == VOS_P2P_GO_MODE))
          txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
@@ -3269,7 +3317,7 @@ limSendReassocReqMgmtFrame(tpAniSirGlobal     pMac,
         psessionEntry->assocReqLen = nPayload;
     }
 
-    if((SIR_BAND_5_GHZ == limGetRFBand(psessionEntry->currentOperChannel)) ||
+    if( (SIR_BAND_5_GHZ == limGetRFBand(psessionEntry->currentOperChannel)) ||
             (psessionEntry->pePersona == VOS_P2P_CLIENT_MODE) ||
             (psessionEntry->pePersona == VOS_P2P_GO_MODE))
     {
@@ -3637,12 +3685,12 @@ limSendAuthMgmtFrame(tpAniSirGlobal pMac,
 
 #if defined(WLAN_FEATURE_VOWIFI_11R) || defined(FEATURE_WLAN_ESE) || defined(FEATURE_WLAN_LFR)
     if ((NULL != psessionEntry->ftPEContext.pFTPreAuthReq) &&
-         (SIR_BAND_5_GHZ == limGetRFBand(
+         ( SIR_BAND_5_GHZ == limGetRFBand(
              psessionEntry->ftPEContext.pFTPreAuthReq->preAuthchannelNum)))
         txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
     else
 #endif
-    if((SIR_BAND_5_GHZ == limGetRFBand(psessionEntry->currentOperChannel)) ||
+    if( (SIR_BAND_5_GHZ == limGetRFBand(psessionEntry->currentOperChannel)) ||
          (psessionEntry->pePersona == VOS_P2P_CLIENT_MODE) ||
          (psessionEntry->pePersona == VOS_P2P_GO_MODE))
         txFlag |= HAL_USE_BD_RATE2_FOR_MANAGEMENT_FRAME;
@@ -3897,11 +3945,13 @@ end:
 
 eHalStatus limDisassocTxCompleteCnf(tpAniSirGlobal pMac, tANI_U32 txCompleteSuccess)
 {
+    limLog(pMac, LOG1, FL("txCompleteSuccess: %d"), txCompleteSuccess);
     return limSendDisassocCnf(pMac);
 }
 
 eHalStatus limDeauthTxCompleteCnf(tpAniSirGlobal pMac, tANI_U32 txCompleteSuccess)
 {
+    limLog(pMac, LOG1, FL("txCompleteSuccess: %d"), txCompleteSuccess);
     return limSendDeauthCnf(pMac);
 }
 
@@ -5299,20 +5349,22 @@ tSirRetStatus limSendAddBARsp( tpAniSirGlobal pMac,
                             pAddBARspBuffer, txFlag, smeSessionId);
     MTRACE(vos_trace(VOS_MODULE_ID_PE, TRACE_CODE_TX_COMPLETE,
            psessionEntry->peSessionId, halStatus));
-if (eHAL_STATUS_SUCCESS != halStatus) {
-    limLog(pMac, LOGE, FL("halTxFrame FAILED! Status [%d]"), halStatus);
+    if (eHAL_STATUS_SUCCESS != halStatus )
+    {
+        limLog( pMac, LOGE,
+                FL( "halTxFrame FAILED! Status [%d]" ),
+                halStatus );
 
-    // FIXME - HAL error codes are different from PE error codes!!
-    // And, this routine is returning tSirRetStatus
+    // FIXME - HAL error codes are different from PE error
+    // codes!! And, this routine is returning tSirRetStatus
     statusCode = eSIR_FAILURE;
-    // Pkt will be freed up by the callback
+    //Pkt will be freed up by the callback
     return statusCode;
-} else {
-    return eSIR_SUCCESS;
-}
+   }
+   else
+      return eSIR_SUCCESS;
 
-      
-      returnAfterError:
+returnAfterError:
 
       // Release buffer, if allocated
       if( NULL != pAddBARspBuffer )
@@ -5485,17 +5537,17 @@ tSirRetStatus limSendDelBAInd( tpAniSirGlobal pMac,
                             pDelBAIndBuffer, txFlag, smeSessionId);
     MTRACE(vos_trace(VOS_MODULE_ID_PE, TRACE_CODE_TX_COMPLETE,
                      psessionEntry->peSessionId, halStatus));
-  if (eHAL_STATUS_SUCCESS != halStatus) {
-    PELOGE(limLog(pMac, LOGE, FL("halTxFrame FAILED! Status [%d]"), halStatus);)
-    statusCode = eSIR_FAILURE;
-    // Pkt will be freed up by the callback
-    return statusCode;
-    } else {
-    return eSIR_SUCCESS;
-}
+   if (eHAL_STATUS_SUCCESS != halStatus )
+   {
+       PELOGE(limLog( pMac, LOGE, FL( "halTxFrame FAILED! Status [%d]" ), halStatus );)
+       statusCode = eSIR_FAILURE;
+       //Pkt will be freed up by the callback
+       return statusCode;
+    }
+    else
+      return eSIR_SUCCESS;
 
-
-      returnAfterError:
+returnAfterError:
 
       // Release buffer, if allocated
       if( NULL != pDelBAIndBuffer )

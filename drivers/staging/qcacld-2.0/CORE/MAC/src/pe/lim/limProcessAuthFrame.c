@@ -700,7 +700,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                                                     eLIM_AUTH_RSP_TIMER,
                                                     pAuthNode->authNodeIdx);
                     }
-                    PELOGE(limLog(pMac, LOGE, FL("STA is initiating brand-new Authentication ..."));)
+                    limLog(pMac, LOGW, FL("STA is initiating brand-new Authentication ..."));
                     limDeletePreAuthNode(pMac,
                                          pHdr->sa);
                     /**
@@ -749,7 +749,7 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
                      * but ACK lost at STA side, in this case 2nd auth frame is already
                      * in transmission queue
                      * */
-                    PELOGE(limLog(pMac, LOGE, FL("STA is initiating Authentication after ACK lost..."));)
+                    limLog(pMac, LOGW, FL("STA is initiating Authentication after ACK lost..."));
                     goto free;
                 }
             }
@@ -1812,7 +1812,6 @@ limProcessAuthFrame(tpAniSirGlobal pMac, tANI_U8 *pRxPacketInfo, tpPESession pse
 
             break;
     } // end switch (pRxAuthFrameBody->authTransactionSeqNumber)
-
 free:
     if (authFrame)
         vos_mem_free(authFrame);

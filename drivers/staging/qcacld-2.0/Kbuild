@@ -23,6 +23,8 @@ ifeq ($(KERNEL_BUILD),1)
 	WLAN_OPEN_SOURCE := 1
 endif
 
+TARGET_BUILD_VARIANT := user
+
 ifeq ($(KERNEL_BUILD), 0)
 	# These are configurable via Kconfig for kernel-based builds
 	# Need to explicitly configure for Android-based builds
@@ -137,6 +139,13 @@ ifeq ($(KERNEL_BUILD), 0)
 	endif
 endif
 
+#Enable Power debugfs feature only if debug_fs is enabled
+ifeq ($(CONFIG_ANDROID), y)
+CONFIG_WLAN_POWER_DEBUGFS := y
+
+CFLAGS_wlan_hdd_debugfs.o += -DCONFIG_DEBUG_FS
+endif
+
 ifdef CPTCFG_QCA_CLD_WLAN
 	WLAN_ROOT := $(BACKPORT_PWD)/drivers/staging/qcacld-2.0
 	CONFIG_QCA_CLD_WLAN=$(CPTCFG_QCA_CLD_WLAN)
@@ -156,10 +165,10 @@ endif
 # Feature flags which are not (currently) configurable via Kconfig
 
 #Whether to build debug version
-BUILD_DEBUG_VERSION := 1
+BUILD_DEBUG_VERSION := 0
 
 #Enable this flag to build driver in diag version
-BUILD_DIAG_VERSION := 1
+BUILD_DIAG_VERSION := 0
 
 #Do we panic on bug?  default is to warn
 PANIC_ON_BUG := 1
@@ -954,13 +963,10 @@ CDEFINES :=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DWLAN_PERF \
 		-DPTT_SOCK_SVC_ENABLE \
 		-Wall\
-		-Werror\
 		-D__linux__ \
 		-DHAL_SELF_STA_PER_BSS=1 \
-		-DWLAN_FEATURE_VOWIFI_11R \
 		-DWLAN_FEATURE_NEIGHBOR_ROAMING \
-		-DWLAN_FEATURE_NEIGHBOR_ROAMING_DEBUG \
-		-DWLAN_FEATURE_VOWIFI_11R_DEBUG \
+		-DWLAN_FEATURE_VOWIFI_11R \
 		-DFEATURE_WLAN_WAPI \
 		-DFEATURE_OEM_DATA_SUPPORT\
 		-DSOFTAP_CHANNEL_RANGE \
@@ -969,9 +975,7 @@ CDEFINES :=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DWLAN_FEATURE_PACKET_FILTERING \
 		-DWLAN_FEATURE_VOWIFI \
 		-DWLAN_FEATURE_11AC \
-		-DWLAN_FEATURE_P2P_DEBUG \
 		-DWLAN_ENABLE_AGEIE_ON_SCAN_RESULTS \
-		-DWLANTL_DEBUG\
 		-DWLAN_NS_OFFLOAD \
 		-DWLAN_ACTIVEMODE_OFFLOAD_FEATURE \
 		-DWLAN_SOFTAP_VSTA_FEATURE \
@@ -992,8 +996,10 @@ CDEFINES :=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DFEATURE_WLAN_EXTSCAN \
 		-DFEATURE_WLAN_LFR \
 		-DFEATURE_WLAN_CH144 \
-		-DHTC_CRP_DEBUG \
-		-DWLAN_VOWIFI_DEBUG
+
+ifeq ($(CONFIG_WLAN_POWER_DEBUGFS), y)
+CDEFINES += -DWLAN_POWER_DEBUGFS
+endif
 
 ifeq ($(CONFIG_SCPC_FEATURE), y)
 CDEFINES += -DWLAN_SCPC_FEATURE
@@ -1047,8 +1053,10 @@ endif
 
 ifeq ($(CONFIG_ARCH_MSM), y)
 CDEFINES += -DMSM_PLATFORM
-ifeq ($(CONFIG_CNSS_PCI), y)
+ifeq ($(CONFIG_CNSS), y)
+ifeq ($(CONFIG_HIF_PCI), 1)
 CDEFINES += -DFEATURE_BUS_BANDWIDTH
+endif
 endif
 endif
 
@@ -1071,15 +1079,20 @@ CDEFINES += -DWCN_PRONTO
 CDEFINES += -DWCN_PRONTO_V1
 endif
 
-CDEFINES += 	-DTRACE_RECORD \
-		-DLIM_TRACE_RECORD \
-		-DSME_TRACE_RECORD \
-		-DHDD_TRACE_RECORD
-
 ifeq ($(BUILD_DEBUG_VERSION),1)
 CDEFINES +=	-DWLAN_DEBUG \
 		-DPE_DEBUG_LOGW \
-		-DPE_DEBUG_LOGE
+		-DPE_DEBUG_LOGE \
+		-DWLANTL_DEBUG \
+		-DWLAN_VOWIFI_DEBUG \
+		-DWLAN_FEATURE_P2P_DEBUG \
+		-DWLAN_FEATURE_NEIGHBOR_ROAMING_DEBUG \
+		-DHTC_CRP_DEBUG \
+		-DWLAN_FEATURE_VOWIFI_11R_DEBUG \
+		-DTRACE_RECORD \
+		-DLIM_TRACE_RECORD \
+		-DSME_TRACE_RECORD \
+		-DHDD_TRACE_RECORD
 endif
 
 ifeq ($(CONFIG_SLUB_DEBUG_ON),y)
@@ -1154,6 +1167,8 @@ endif
 
 # enable the MAC Address auto-generation feature
 CDEFINES += -DWLAN_AUTOGEN_MACADDR_FEATURE
+
+CDEFINES += -DDESC_DUP_DETECT_DEBUG
 
 ifeq ($(CONFIG_WLAN_FEATURE_11W),y)
 CDEFINES += -DWLAN_FEATURE_11W
@@ -1507,6 +1522,11 @@ CDEFINES += -DWLAN_FEATURE_UDP_RESPONSE_OFFLOAD
 endif
 
 
+ifeq ($(CONFIG_WLAN_FEATURE_RX_WAKELOCK),y)
+CDEFINES += -DWLAN_FEATURE_RX_WAKELOCK
+endif
+
+
 ifeq ($(CONFIG_WLAN_WOW_PULSE), y)
 CDEFINES += -DWLAN_FEATURE_WOW_PULSE
 endif
@@ -1515,12 +1535,12 @@ ifeq ($(CONFIG_WLAN_FEATURE_NAN_DATAPATH),y)
 CDEFINES += -DWLAN_FEATURE_NAN_DATAPATH
 endif
 
-ifeq ($(CONFIG_HIF_PCI), 1)
-CDEFINES += -DFORCE_LEGACY_PCI_INTERRUPTS
-endif
-
 ifeq ($(CONFIG_DPTRACE_ENABLE), y)
 CDEFINES += -DFEATURE_DPTRACE_ENABLE
+endif
+
+ifeq ($(CONFIG_HIF_PCI), 1)
+CDEFINES += -DFORCE_LEGACY_PCI_INTERRUPTS
 endif
 
 KBUILD_CPPFLAGS += $(CDEFINES)
@@ -1532,6 +1552,16 @@ KBUILD_CPPFLAGS += $(CDEFINES)
 ifeq ($(call cc-option-yn, -Wmaybe-uninitialized),y)
 EXTRA_CFLAGS += -Wmaybe-uninitialized
 endif
+
+# Disable certain flags for Clang as they are spammy and I'm not fixing them :^)
+ifeq ($(cc-name),clang)
+EXTRA_CFLAGS += -Wno-shift-count-negative
+EXTRA_CFLAGS += -Wno-enum-conversion
+EXTRA_CFLAGS += -Wno-typedef-redefinition 
+EXTRA_CFLAGS += -Wno-shift-count-overflow
+EXTRA_CFLAGS += -Wno-non-literal-null-conversion
+EXTRA_CFLAGS += -Wno-logical-not-parentheses
+endif 
 
 # If the module name is not "wlan", then the define MULTI_IF_NAME to be the
 # same a the QCA CHIP name. The host driver will then append MULTI_IF_NAME to

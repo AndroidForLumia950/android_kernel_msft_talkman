@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2014, 2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2014, 2016-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -107,16 +107,21 @@ typedef enum
 #define NO_SESSION 0xFF
 
 #else
-#define MTRACE(p) {  }
+#define MTRACE(p) do { } while (0)
 
 #endif
+
+#define ROW_SIZE 16
+/* Buffer size = data bytes(2 hex chars plus space) + NULL */
+#define BUFFER_SIZE ((ROW_SIZE * 3) + 1)
+
 
 /*--------------------------------------------------------------------------
   Structure definition
   ------------------------------------------------------------------------*/
 typedef struct  svosTraceRecord
 {
-    v_U64_t time;
+    char time[20];
     v_U8_t module;
     v_U8_t code;
     v_U16_t session;

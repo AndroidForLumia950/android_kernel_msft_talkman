@@ -70,7 +70,6 @@
 #include "csrEse.h"
 #endif
 
-#define WLAN_FEATURE_NEIGHBOR_ROAMING_DEBUG 1
 #ifdef WLAN_FEATURE_NEIGHBOR_ROAMING_DEBUG
 #define NEIGHBOR_ROAM_DEBUG smsLog
 #else
@@ -1818,6 +1817,9 @@ csrNeighborRoamPrepareScanProfileFilter(tpAniSirGlobal pMac,
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
     if (pNeighborRoamInfo->uOsRequestedHandoff)
     {
+
+        VOS_TRACE (VOS_MODULE_ID_SME, VOS_TRACE_LEVEL_DEBUG,
+                   FL("OS Requested Handoff"));
         pScanFilter->BSSIDs.numOfBSSIDs = 1;
         pScanFilter->BSSIDs.bssid = vos_mem_malloc(sizeof(tSirMacAddr) * pScanFilter->BSSIDs.numOfBSSIDs);
         if (NULL == pScanFilter->BSSIDs.bssid)
@@ -4386,6 +4388,9 @@ VOS_STATUS csrNeighborRoamTransitToCFGChanScan(tpAniSirGlobal pMac,
         else
         {
             numOfChannels = pMac->scan.occupiedChannels[sessionId].numChannels;
+            if (numOfChannels > WNI_CFG_VALID_CHANNEL_LIST_LEN) {
+                numOfChannels = WNI_CFG_VALID_CHANNEL_LIST_LEN;
+            }
             if (numOfChannels
 #ifdef FEATURE_WLAN_LFR
                 && ((pNeighborRoamInfo->uScanMode == SPLIT_SCAN_OCCUPIED_LIST) ||
@@ -4417,10 +4422,6 @@ VOS_STATUS csrNeighborRoamTransitToCFGChanScan(tpAniSirGlobal pMac,
                 }
                 else
                 {
-                    if (numOfChannels > WNI_CFG_VALID_CHANNEL_LIST_LEN)
-                    {
-                        numOfChannels = WNI_CFG_VALID_CHANNEL_LIST_LEN;
-                    }
                     vos_mem_copy(channelList,
                             pMac->scan.occupiedChannels[sessionId].channelList,
                             numOfChannels * sizeof(tANI_U8));
@@ -4454,10 +4455,6 @@ VOS_STATUS csrNeighborRoamTransitToCFGChanScan(tpAniSirGlobal pMac,
                 {
                     smsLog(pMac, LOGE, FL("Memory allocation for Channel list failed"));
                     return VOS_STATUS_E_RESOURCES;
-                }
-                if (numOfChannels > WNI_CFG_VALID_CHANNEL_LIST_LEN)
-                {
-                    numOfChannels = WNI_CFG_VALID_CHANNEL_LIST_LEN;
                 }
                 currChannelListInfo->numOfChannels = outputNumOfChannels;
                 vos_mem_copy(currChannelListInfo->ChannelList,
@@ -5675,6 +5672,7 @@ void csrNeighborRoamClose(tpAniSirGlobal pMac, tANI_U8 sessionId)
                                 &pNeighborRoamInfo->FTRoamInfo.preAuthDoneList);
     csrLLClose(&pNeighborRoamInfo->FTRoamInfo.preAuthDoneList);
 #endif /* WLAN_FEATURE_VOWIFI_11R */
+    pNeighborRoamInfo->b_roam_scan_offload_started = false;
 
     CSR_NEIGHBOR_ROAM_STATE_TRANSITION(eCSR_NEIGHBOR_ROAM_STATE_CLOSED,
                                        sessionId)
@@ -6071,6 +6069,10 @@ eHalStatus csrNeighborRoamProcessHandoffReq(tpAniSirGlobal pMac,
     tCsrRoamProfile *pProfile = NULL;
     tCsrRoamSession *pSession = CSR_GET_SESSION(pMac, sessionId);
     tANI_U8 i = 0;
+    uint8_t roam_now = 0;
+    uint8_t roamable_ap_count = 0;
+    tCsrScanResultFilter    scan_filter;
+    tScanResultHandle       scan_result;
 
     if (NULL == pSession)
     {
@@ -6134,11 +6136,30 @@ eHalStatus csrNeighborRoamProcessHandoffReq(tpAniSirGlobal pMac,
         }
         pProfile->ChannelInfo.ChannelList[0] = pNeighborRoamInfo->handoffReqInfo.channel;
 
-        //do a SSID scan
-        status = csrScanForSSID(pMac, sessionId, pProfile, roamId, FALSE);
-        if(!HAL_STATUS_SUCCESS(status))
-        {
-            smsLog(pMac, LOGE, FL("SSID scan failed"));
+        /*
+         * For User space connect requests, the scan has already been done.
+         * So, check if the BSS descriptor exists in the scan cache and
+         * proceed with the handoff instead of a redundant scan again.
+         */
+        if (pNeighborRoamInfo->handoffReqInfo.src == CONNECT_CMD_USERSPACE) {
+            smsLog(pMac, LOG1, FL("Connect cmd with bssid within same ESS"));
+            status = csrNeighborRoamPrepareScanProfileFilter(
+                                               pMac, &scan_filter, sessionId);
+            smsLog(pMac, LOG1, FL("Filter creation status = %d"), status);
+            status = csrScanGetResult(pMac, &scan_filter, &scan_result);
+            roam_now = csrNeighborRoamProcessScanResults(pMac, sessionId,
+                                                          &scan_result);
+            roamable_ap_count = csrLLCount(&pNeighborRoamInfo->roamableAPList);
+            csrFreeScanFilter(pMac, &scan_filter);
+            smsLog(pMac, LOG1, FL("roam_now=%d, roamable_ap_count=%d"),
+                   roam_now, roamable_ap_count);
+        }
+        if (roam_now && roamable_ap_count) {
+            csrNeighborRoamTriggerHandoff(pMac, sessionId);
+        } else {
+            status = csrScanForSSID(pMac, sessionId, pProfile, roamId, FALSE);
+            if(!HAL_STATUS_SUCCESS(status))
+               smsLog(pMac, LOGE, FL("SSID scan failed"));
         }
     }while(0);
 

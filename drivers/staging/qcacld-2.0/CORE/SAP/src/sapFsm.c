@@ -2463,6 +2463,8 @@ sap_OpenSession (tHalHandle hHal, ptSapContext sapContext)
         return VOS_STATUS_E_FAILURE;
     }
 
+    sme_set_allowed_action_frames(hHal, ALLOWED_ACTION_FRAMES_BITMAP0_SAP);
+
     pMac->sap.sapCtxList [ sapContext->sessionId ].sessionID =
                                sapContext->sessionId;
     pMac->sap.sapCtxList [ sapContext->sessionId ].pSapContext = sapContext;
@@ -2938,13 +2940,6 @@ sapSignalHDDevent
                           "eSAP_REMAIN_CHAN_READY");
            sapApAppEvent.sapHddEventCode = eSAP_REMAIN_CHAN_READY;
             break;
-       case eSAP_SEND_ACTION_CNF:
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                       FL("SAP event callback event = %s"),
-                          "eSAP_SEND_ACTION_CNF");
-            sapApAppEvent.sapHddEventCode = eSAP_SEND_ACTION_CNF;
-            sapApAppEvent.sapevt.sapActionCnf.actionSendSuccess = (eSapStatus)context;
-            break;
 
        case eSAP_DISCONNECT_ALL_P2P_CLIENT:
             VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
@@ -3153,6 +3148,14 @@ eHalStatus sap_CloseSession(tHalHandle hHal,
         pMac->sap.SapDfsInfo.cac_state = eSAP_DFS_DO_NOT_SKIP_CAC;
         sap_CacResetNotify(hHal);
         vos_mem_zero(&pMac->sap, sizeof(pMac->sap));
+
+        /*
+         * No valid concurrent AP sessions(SAP/P2PGO), switch back the
+         * allowed action frames bitmask to STA mode and set the same
+         * to FW
+         */
+        sme_set_allowed_action_frames(hHal,
+                           ALLOWED_ACTION_FRAMES_BITMAP0_STA);
     }
 
     return halstatus;
@@ -3393,7 +3396,7 @@ sapFsm
     switch (stateVar)
     {
         case eSAP_DISCONNECTED:
-            if ((msg == eSAP_HDD_START_INFRA_BSS))
+            if (msg == eSAP_HDD_START_INFRA_BSS)
             {
                 /* Transition from eSAP_DISCONNECTED to eSAP_CH_SELECT (both without substates) */
                 VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "In %s, new from state %s => %s",
@@ -4447,8 +4450,8 @@ static VOS_STATUS sapGetChannelList(ptSapContext sapContext,
 #ifdef FEATURE_WLAN_CH_AVOID
                 for( i = 0; i < NUM_20MHZ_RF_CHANNELS; i++ )
                 {
-                    if( (safeChannels[i].channelNumber ==
-                                rfChannels[loopCount].channelNum) )
+                    if(safeChannels[i].channelNumber ==
+                                rfChannels[loopCount].channelNum)
                     {
                         /* Check if channel is safe */
                         if(VOS_TRUE == safeChannels[i].isSafe)

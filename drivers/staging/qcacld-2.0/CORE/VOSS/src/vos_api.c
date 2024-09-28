@@ -501,6 +501,7 @@ VOS_STATUS vos_open( v_CONTEXT_t *pVosContext, v_SIZE_t hddContextSize )
 
   macOpenParms.ssdp = pHddCtx->cfg_ini->ssdp;
   macOpenParms.enable_bcst_ptrn = pHddCtx->cfg_ini->bcastptrn;
+  macOpenParms.enable_mc_list = pHddCtx->cfg_ini->fEnableMCAddrList;
 
 #ifdef FEATURE_WLAN_RA_FILTERING
    macOpenParms.RArateLimitInterval = pHddCtx->cfg_ini->RArateLimitInterval;
@@ -2734,7 +2735,9 @@ void vos_get_log_and_reset_completion(uint32_t *is_fatal,
 
 	if ((WLAN_LOG_INDICATOR_HOST_DRIVER == *indicator) &&
 	    ((WLAN_LOG_REASON_SME_OUT_OF_CMD_BUF == *reason_code) ||
-		 (WLAN_LOG_REASON_SME_COMMAND_STUCK == *reason_code)))
+		 (WLAN_LOG_REASON_SME_COMMAND_STUCK == *reason_code) ||
+		 (WLAN_LOG_REASON_STALE_SESSION_FOUND == *reason_code) ||
+		 (WLAN_LOG_REASON_SCAN_NOT_ALLOWED == *reason_code)))
 		*is_ssr_needed = true;
 	else
 		*is_ssr_needed = false;
@@ -2987,3 +2990,17 @@ inline void vos_pkt_stats_to_logger_thread(void *pl_hdr, void *pkt_dump,
 
 	wlan_pkt_stats_to_logger_thread(pl_hdr, pkt_dump, data);
 }
+
+v_U64_t vos_get_monotonic_boottime_ns(void)
+{
+	struct timespec ts;
+
+	ktime_get_ts(&ts);
+	return timespec_to_ns(&ts);
+}
+
+v_U64_t vos_get_bootbased_boottime_ns(void)
+{
+       return ktime_to_ns(ktime_get_boottime());
+}
+

@@ -73,6 +73,7 @@
 #include "vos_types.h"
 #include "vos_packet.h"
 #include "vos_memory.h"
+#include "nan_datapath.h"
 
 void limLogSessionStates(tpAniSirGlobal pMac);
 
@@ -243,14 +244,14 @@ __limExtScanForwardBcnProbeRsp(tpAniSirGlobal pmac, uint8_t *rx_pkt_info,
 	tSirMsgQ                     mmh_msg;
 	tpSirMacMgmtHdr              hdr;
 
-	result = vos_mem_malloc(sizeof(*result) + ie_len);
+	result = vos_mem_malloc(sizeof(*result) + ie_len + ie_len);
 	if (NULL == result) {
 		limLog(pmac, LOGE, FL("Memory allocation failed"));
 		return;
 	}
 	hdr = WDA_GET_RX_MAC_HEADER(rx_pkt_info);
 	body = WDA_GET_RX_MPDU_DATA(rx_pkt_info);
-	vos_mem_zero(result, sizeof(*result) + ie_len);
+	vos_mem_zero(result, sizeof(*result) + ie_len + ie_len);
 
 	/* Received frame does not have request id, hence set 0 */
 	result->requestId = 0;
@@ -273,6 +274,15 @@ __limExtScanForwardBcnProbeRsp(tpAniSirGlobal pmac, uint8_t *rx_pkt_info,
 	/* Copy IE fields */
 	vos_mem_copy((uint8_t *) &result->ap.ieData,
 			body + SIR_MAC_B_PR_SSID_OFFSET, ie_len);
+
+	/* bss_description points to ap.ieData as ap.ieData is flexible arrary
+	 * member.
+	 * Fill result->bss_description by leaving ie_len bytes after ap.ieData
+	 * manually.
+	 */
+	limCollectBssDescription(pmac,
+							(tSirBssDescription *)((uint8_t *)&result->bss_description +
+							ie_len), frame, rx_pkt_info, eANI_BOOLEAN_FALSE);
 
 	mmh_msg.type = msg_type;
 	mmh_msg.bodyptr = result;
@@ -344,10 +354,10 @@ __limProcessExtScanBeaconProbeRsp(tpAniSirGlobal pmac, uint8_t *rx_pkt_info,
 *    handled by limHandleFramesInScanState before __limHandleBeacon call is invoked.
 * during scanning, when any session is active, but beacon/Pr does not belong to that session, psessionEntry will be null.
 *    handled by limHandleFramesInScanState before __limHandleBeacon call is invoked.
-* during scanning, when any session is active, and beacon/Pr belongs to one of the sessions, psessionEntry will not be null.
+* during scanning, when any session is active, and beacon/Pr belongs to one of the session, psessionEntry will not be null.
 *    handled by limHandleFramesInScanState before __limHandleBeacon call is invoked.
 * Not scanning, no session:
-*    there should not be any beacon coming; if coming, it should be dropped.
+*    there should not be any beacon coming, if coming, should be dropped.
 * Not Scanning,
 */
 static void
@@ -357,20 +367,24 @@ __limHandleBeacon(tpAniSirGlobal pMac, tpSirMsgQ pMsg, tpPESession psessionEntry
     tANI_U8 *pRxPacketInfo;
     limGetBDfromRxPacket(pMac, pMsg->bodyptr, (tANI_U32 **)&pRxPacketInfo);
 
-    // This function should not be called if a beacon is received in scan state.
-    // So not doing any checks for the global state.
+    //This function should not be called if beacon is received in scan state.
+    //So not doing any checks for the global state.
 
-    if (psessionEntry == NULL) {
+    if(psessionEntry == NULL)
+    {
         schBeaconProcess(pMac, pRxPacketInfo, NULL);
-    } else if ((psessionEntry->limSmeState == eLIM_SME_LINK_EST_STATE) ||
-               (psessionEntry->limSmeState == eLIM_SME_NORMAL_STATE)) {
-        schBeaconProcess(pMac, pRxPacketInfo, psessionEntry);
-    } else {
-        limProcessBeaconFrame(pMac, pRxPacketInfo, psessionEntry);
     }
+    else if( (psessionEntry->limSmeState == eLIM_SME_LINK_EST_STATE) ||
+                (psessionEntry->limSmeState == eLIM_SME_NORMAL_STATE))
+    {
+        schBeaconProcess(pMac, pRxPacketInfo, psessionEntry);
+    }
+     else
+        limProcessBeaconFrame(pMac, pRxPacketInfo, psessionEntry);
 
     return;
 }
+
 
 //Fucntion prototype
 void limProcessNormalHddMsg(tpAniSirGlobal pMac, tSirMsgQ *pLimMsg, tANI_U8 fRspReqd);
@@ -411,12 +425,12 @@ limDeferMsg(tpAniSirGlobal pMac, tSirMsgQ *pMsg)
               pMsg->type, pMac->lim.gLimSmeState, pMac->lim.gLimPrevSmeState,
               pMac->lim.gLimSystemRole, pMac->lim.gLimMlmState,
               pMac->lim.gLimPrevMlmState);
-        MTRACE(macTraceMsgRx(pMac, NO_SESSION, LIM_TRACE_MAKE_RXMSG(pMsg->type, LIM_MSG_DEFERRED));)
+        MTRACE(macTraceMsgRx(pMac, NO_SESSION, LIM_TRACE_MAKE_RXMSG(pMsg->type, LIM_MSG_DEFERRED)));
     }
     else
     {
         limLog(pMac, LOG1, FL("Dropped lim message (0x%X)"), pMsg->type);
-        MTRACE(macTraceMsgRx(pMac, NO_SESSION, LIM_TRACE_MAKE_RXMSG(pMsg->type, LIM_MSG_DROPPED));)
+        MTRACE(macTraceMsgRx(pMac, NO_SESSION, LIM_TRACE_MAKE_RXMSG(pMsg->type, LIM_MSG_DROPPED)));
     }
 
     return retCode;
@@ -713,6 +727,13 @@ limHandle80211Frames(tpAniSirGlobal pMac, tpSirMsgQ limMsg, tANI_U8 *pDeferMsg)
     fcOffset = (v_U8_t)WDA_GET_RX_MPDU_HEADER_OFFSET(pRxPacketInfo);
     fc = pHdr->fc;
 
+    if (pMac->sap.SapDfsInfo.is_dfs_cac_timer_running) {
+        psessionEntry = peFindSessionByBssid(pMac, pHdr->bssId, &sessionId);
+        if (psessionEntry && (VOS_STA_SAP_MODE == psessionEntry->pePersona)) {
+            limLog(pMac, LOG1, FL("CAC timer running - drop the frame"));
+            goto end;
+        }
+    }
 #ifdef WLAN_DUMP_MGMTFRAMES
     limLog( pMac, LOGE, FL("ProtVersion %d, Type %d, Subtype %d rateIndex=%d"),
             fc.protVer, fc.type, fc.subType,
@@ -1214,7 +1235,7 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
        if (limMsg->type != SIR_CFG_PARAM_UPDATE_IND &&
           limMsg->type != SIR_BB_XPORT_MGMT_MSG)
            MTRACE(macTraceMsgRx(pMac, NO_SESSION,
-                 LIM_TRACE_MAKE_RXMSG(limMsg->type, LIM_MSG_PROCESSED));)
+                 LIM_TRACE_MAKE_RXMSG(limMsg->type, LIM_MSG_PROCESSED)));
     }
 
     switch (limMsg->type)
@@ -1381,12 +1402,10 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
             break;
         case eWNI_SME_SCAN_ABORT_IND:
           {
-            tSirMbMsg *pMsg = limMsg->bodyptr;
-            tANI_U8 sessionId;
+            tSirSmeScanAbortReq *pMsg = (tSirSmeScanAbortReq *) limMsg->bodyptr;
             if (pMsg)
             {
-               sessionId = (tANI_U8) pMsg->data[0];
-               limProcessAbortScanInd(pMac, sessionId);
+               limProcessAbortScanInd(pMac, pMsg->sessionId);
                vos_mem_free((v_VOID_t *)limMsg->bodyptr);
                limMsg->bodyptr = NULL;
             }
@@ -1450,6 +1469,10 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
         case eWNI_SME_EXT_CHANGE_CHANNEL:
         case eWNI_SME_ROAM_RESTART_REQ:
         case eWNI_SME_REGISTER_MGMT_FRAME_CB:
+        case eWNI_SME_NDP_INITIATOR_REQ:
+        case eWNI_SME_NDP_RESPONDER_REQ:
+        case eWNI_SME_REGISTER_P2P_ACK_CB:
+        case eWNI_SME_NDP_END_REQ:
             // These messages are from HDD
             limProcessNormalHddMsg(pMac, limMsg, false);   //no need to response to hdd
             break;
@@ -2191,13 +2214,19 @@ limProcessMessages(tpAniSirGlobal pMac, tpSirMsgQ  limMsg)
         lim_sap_offload_del_sta(pMac, limMsg);
         break;
 #endif /* SAP_AUTH_OFFLOAD */
-
     case eWNI_SME_DEL_ALL_TDLS_PEERS:
         lim_process_sme_del_all_tdls_peers(pMac, limMsg->bodyptr);
         vos_mem_free((v_VOID_t*)limMsg->bodyptr);
         limMsg->bodyptr = NULL;
         break;
-
+    case SIR_HAL_NDP_INITIATOR_RSP:
+    case SIR_HAL_NDP_INDICATION:
+    case SIR_HAL_NDP_CONFIRM:
+    case SIR_HAL_NDP_RESPONDER_RSP:
+    case SIR_HAL_NDP_END_RSP:
+    case SIR_HAL_NDP_END_IND:
+        lim_handle_ndp_event_message(pMac, limMsg);
+        break;
     default:
         vos_mem_free((v_VOID_t*)limMsg->bodyptr);
         limMsg->bodyptr = NULL;

@@ -76,7 +76,8 @@
 #define MAX_SSR_PROTECT_LOG (16)
 
 /* Timer value for detecting thread stuck issues */
-#define THREAD_STUCK_TIMER_VAL 5000 /* 5 seconds */
+#define THREAD_STUCK_TIMER_VAL 10000 /* 10 seconds */
+#define THREAD_STUCK_COUNT 6
 
 static atomic_t ssr_protect_entry_count;
 static atomic_t load_unload_protect_count;
@@ -988,12 +989,19 @@ static void vos_wd_detect_thread_stuck(void)
 
 	spin_lock_irqsave(&gpVosWatchdogContext->thread_stuck_lock, flags);
 
-	if (gpVosWatchdogContext->mc_thread_stuck_count) {
+	if (gpVosWatchdogContext->mc_thread_stuck_count == THREAD_STUCK_COUNT) {
 		spin_unlock_irqrestore(&gpVosWatchdogContext->thread_stuck_lock,
 				flags);
-		VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-				"%s: Thread Stuck!!! MC Count %d", __func__,
-				gpVosWatchdogContext->mc_thread_stuck_count);
+		hddLog(LOGE, FL("MC Thread stuck count: %d reached threshold"),
+			gpVosWatchdogContext->mc_thread_stuck_count);
+		return;
+	}
+
+	if (gpVosWatchdogContext->mc_thread_stuck_count == 1) {
+		spin_unlock_irqrestore(&gpVosWatchdogContext->thread_stuck_lock,
+				flags);
+		hddLog(LOGE, FL("Thread Stuck!!! MC Count: %d"),
+			gpVosWatchdogContext->mc_thread_stuck_count);
 
 		vos_dump_stack(gpVosSchedContext->McThread);
 		vos_flush_logs(WLAN_LOG_TYPE_FATAL,
@@ -1131,13 +1139,7 @@ VosWDThread
       /* Post Msg to detect thread stuck */
       if (test_and_clear_bit(WD_WLAN_DETECT_THREAD_STUCK_MASK,
                                    &pWdContext->wdEventFlag)) {
-
-       if (!test_bit(MC_SUSPEND_EVENT_MASK, &gpVosSchedContext->mcEventFlag))
-            vos_wd_detect_thread_stuck();
-       else
-            VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
-               "%s: controller thread %s id: %d is suspended do not attemp probing",
-               __func__, current->comm, current->pid);
+        vos_wd_detect_thread_stuck();
         /*
          * Process here and return without processing any SSR
          * related logic.
@@ -1970,6 +1972,12 @@ VOS_STATUS vos_watchdog_wlan_shutdown(void)
 */
 VOS_STATUS vos_watchdog_wlan_re_init(void)
 {
+    /* Make sure that Vos Watchdog context has been initialized */
+    if (gpVosWatchdogContext == NULL) {
+        VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
+            "%s: gpVosWatchdogContext == NULL", __func__);
+        return VOS_STATUS_SUCCESS;
+    }
     /* watchdog task is still running, it is not closed in shutdown */
     set_bit(WD_WLAN_REINIT_EVENT_MASK, &gpVosWatchdogContext->wdEventFlag);
     set_bit(WD_POST_EVENT_MASK, &gpVosWatchdogContext->wdEventFlag);

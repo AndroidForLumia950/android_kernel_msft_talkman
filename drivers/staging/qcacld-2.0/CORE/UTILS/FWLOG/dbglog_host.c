@@ -1381,7 +1381,9 @@ wmi_config_debug_module_cmd(wmi_unified_t  wmi_handle, A_UINT32 param, A_UINT32 
         }
     }
 
-    AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("wmi_dbg_cfg_send: param 0x%x val 0x%x \n ", param, val));
+    AR_DEBUG_PRINTF(ATH_DEBUG_RSVD1,
+                    ("wmi_dbg_cfg_send: param 0x%x val 0x%x \n",
+                                     param, val));
 
     status = wmi_unified_cmd_send(wmi_handle, buf,
                 len, WMI_DBGLOG_CFG_CMDID);
@@ -1409,15 +1411,15 @@ dbglog_set_mod_enable_bitmap(wmi_unified_t  wmi_handle,A_UINT32 log_level, A_UIN
 			mod_enable_bitmap,bitmap_len);
 }
 
-int dbglog_report_enable(wmi_unified_t  wmi_handle, bool isenable)
+int dbglog_report_enable(wmi_unified_t  wmi_handle, int isenable)
 {
     int bitmap[2] = {0};
 
-  if (isenable != 0 && isenable != 1) {
-    AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("dbglog_report_enable: Invalid value %d\n", isenable));
-    return -EINVAL;
-}
-
+    if (isenable > TRUE) {
+        AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("dbglog_report_enable:Invalid value %d\n",
+        isenable));
+        return -EINVAL;
+    }
 
     if(isenable){
 	/* set the vap enable bitmap */
@@ -3972,25 +3974,27 @@ static void cnss_diag_handle_crash_inject(struct dbglog_slot *slot)
 {
 	switch (slot->diag_type) {
 	case DIAG_TYPE_CRASH_INJECT:
-		if (slot->length == 2) {
-			AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
-					("%s : DIAG_TYPE_CRASH_INJECT: %d %d\n", __func__,
-					 slot->payload[0], slot->payload[1]));
-			if (!tgt_assert_enable) {
-				AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
-						("%s: tgt Assert Disabled\n", __func__));
-				return;
-			}
-			process_wma_set_command_twoargs(0,
-					(int)GEN_PARAM_CRASH_INJECT,
-					slot->payload[0],
-					slot->payload[1], GEN_CMD);
-		}
-		else
+		if (slot->length != 2) {
 			AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("crash_inject cmd error\n"));
+			return;
+		}
+
+		AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
+				("%s : DIAG_TYPE_CRASH_INJECT: %d %d\n", __func__,
+				 slot->payload[0], slot->payload[1]));
+		if (!tgt_assert_enable) {
+			AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
+					("%s: tgt Assert Disabled\n", __func__));
+			return;
+		}
+		process_wma_set_command_twoargs(0,
+				(int)GEN_PARAM_CRASH_INJECT,
+				slot->payload[0],
+				slot->payload[1], GEN_CMD);
 		break;
 	default:
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("Unknown cmd error\n"));
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("Unknown cmd[%d] error\n",
+						slot->diag_type));
 		break;
 	}
 }
@@ -4013,7 +4017,8 @@ int cnss_diag_msg_callback(struct sk_buff *skb)
 
 	nlh = (struct nlmsghdr *)skb->data;
 	if (!nlh) {
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: Netlink header null \n", __func__));
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: Netlink header null \n",
+						__func__));
 		return -1;
 	}
 

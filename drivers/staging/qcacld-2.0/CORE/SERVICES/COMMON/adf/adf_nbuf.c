@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -708,6 +708,9 @@ __adf_nbuf_data_get_icmp_subtype(uint8_t *data)
 	subtype = (uint8_t)(*(uint8_t *)
 			(data + ICMP_SUBTYPE_OFFSET));
 
+	VOS_TRACE(VOS_MODULE_ID_ADF, VOS_TRACE_LEVEL_DEBUG,
+		"ICMP proto type: 0x%02x", subtype);
+
 	switch (subtype) {
 	case ICMP_REQUEST:
 		proto_subtype = ADF_PROTO_ICMP_REQ;
@@ -740,12 +743,21 @@ __adf_nbuf_data_get_icmpv6_subtype(uint8_t *data)
 	subtype = (uint8_t)(*(uint8_t *)
 			(data + ICMPV6_SUBTYPE_OFFSET));
 
+	VOS_TRACE(VOS_MODULE_ID_ADF, VOS_TRACE_LEVEL_DEBUG,
+		"ICMPv6 proto type: 0x%02x", subtype);
+
 	switch (subtype) {
 	case ICMPV6_REQUEST:
 		proto_subtype = ADF_PROTO_ICMPV6_REQ;
 		break;
 	case ICMPV6_RESPONSE:
 		proto_subtype = ADF_PROTO_ICMPV6_RES;
+		break;
+	case ICMPV6_RS:
+		proto_subtype = ADF_PROTO_ICMPV6_RS;
+		break;
+	case ICMPV6_RA:
+		proto_subtype = ADF_PROTO_ICMPV6_RA;
 		break;
 	case ICMPV6_NS:
 		proto_subtype = ADF_PROTO_ICMPV6_NS;
@@ -804,11 +816,10 @@ __adf_nbuf_data_get_ipv6_proto(uint8_t *data)
  *
  * This func. checks whether it is a DHCP packet or not.
  *
- * Return: A_STATUS_OK if it is a DHCP packet
- *         A_STATUS_FAILED if not
+ * Return: TRUE if it is a DHCP packet
+ *         FALSE if not
  */
-a_status_t
-__adf_nbuf_data_is_dhcp_pkt(uint8_t *data)
+bool __adf_nbuf_data_is_dhcp_pkt(uint8_t *data)
 {
    a_uint16_t    SPort;
    a_uint16_t    DPort;
@@ -823,11 +834,11 @@ __adf_nbuf_data_is_dhcp_pkt(uint8_t *data)
        ((ADF_NBUF_TRAC_DHCP_CLI_PORT == adf_os_cpu_to_be16(SPort)) &&
        (ADF_NBUF_TRAC_DHCP_SRV_PORT == adf_os_cpu_to_be16(DPort))))
     {
-        return A_STATUS_OK;
+        return true;
     }
     else
     {
-        return A_STATUS_FAILED;
+        return false;
     }
 }
 
@@ -837,11 +848,10 @@ __adf_nbuf_data_is_dhcp_pkt(uint8_t *data)
  *
  * This func. checks whether it is a EAPOL packet or not.
  *
- * Return: A_STATUS_OK if it is a EAPOL packet
- *         A_STATUS_FAILED if not
+ * Return: TRUE if it is a EAPOL packet
+ *         FALSE if not
  */
-a_status_t
-__adf_nbuf_data_is_eapol_pkt(uint8_t *data)
+bool __adf_nbuf_data_is_eapol_pkt(uint8_t *data)
 {
     a_uint16_t    ether_type;
 
@@ -849,11 +859,11 @@ __adf_nbuf_data_is_eapol_pkt(uint8_t *data)
 			ADF_NBUF_TRAC_ETH_TYPE_OFFSET));
     if (ADF_NBUF_TRAC_EAPOL_ETH_TYPE == adf_os_cpu_to_be16(ether_type))
     {
-        return A_STATUS_OK;
+        return true;
     }
     else
     {
-        return A_STATUS_FAILED;
+        return false;
     }
 }
 
@@ -1171,11 +1181,11 @@ __adf_nbuf_trace_update(struct sk_buff *buf, char *event_string)
       break;
    case NBUF_PKT_TRAC_TYPE_NS:
       adf_os_mem_copy(string_buf + adf_os_str_len(event_string),
-                      "NS", NBUF_PKT_TRAC_PROTO_STRING);
+                      "NS\0", NBUF_PKT_TRAC_PROTO_STRING);
       break;
    case NBUF_PKT_TRAC_TYPE_NA:
       adf_os_mem_copy(string_buf + adf_os_str_len(event_string),
-                      "NA", NBUF_PKT_TRAC_PROTO_STRING);
+                      "NA\0", NBUF_PKT_TRAC_PROTO_STRING);
       break;
    default:
       break;
@@ -1250,3 +1260,65 @@ int adf_nbuf_update_radiotap(struct mon_rx_status *rx_status, adf_nbuf_t nbuf,
 			rtap_hdr_len, rtap_len - rtap_hdr_len);
 	return rtap_len;
 }
+
+/**
+ * __adf_nbuf_is_wai_pkt() - Check if frame is WAI
+ * @data: pointer to skb data buffer
+ *
+ * This function checks if the frame is WAI.
+ *
+ * Return: true (1) if WAI
+ *
+ */
+bool __adf_nbuf_is_wai_pkt(uint8_t *data)
+{
+	uint16_t ether_type;
+
+	ether_type = (uint16_t)(*(uint16_t *)
+			(data + ADF_NBUF_TRAC_ETH_TYPE_OFFSET));
+
+	if (ether_type == VOS_SWAP_U16(ADF_NBUF_TRAC_WAI_ETH_TYPE))
+		return true;
+
+	return false;
+}
+
+/**
+ * __adf_nbuf_is_group_pkt() - Check if frame is multicast packet
+ * @data: pointer to skb data buffer
+ *
+ * This function checks if the frame is multicast packet.
+ *
+ * Return: true (1) if multicast
+ *
+ */
+bool __adf_nbuf_is_multicast_pkt(uint8_t *data)
+{
+	struct adf_mac_addr *mac_addr = (struct adf_mac_addr*)data;
+
+	if ( mac_addr->bytes[0] & 0x01 )
+		return true;
+
+	return false;
+}
+
+/**
+ * __adf_nbuf_is_bcast_pkt() - Check if frame is broadcast packet
+ * @data: pointer to skb data buffer
+ *
+ * This function checks if the frame is broadcast packet.
+ *
+ * Return: true (1) if broadcast
+ *
+ */
+bool __adf_nbuf_is_bcast_pkt(uint8_t *data)
+{
+	struct adf_mac_addr *mac_addr = (struct adf_mac_addr*)data;
+	struct adf_mac_addr bcast_addr = VOS_MAC_ADDR_BROADCAST_INITIALIZER;
+
+	if (!memcmp( mac_addr, &bcast_addr, VOS_MAC_ADDR_SIZE))
+		return true;
+
+	return false;
+}
+

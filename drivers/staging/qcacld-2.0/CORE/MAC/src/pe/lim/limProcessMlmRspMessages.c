@@ -2316,15 +2316,26 @@ void limProcessBtAmpApMlmDelBssRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPES
     }
 }
 
+/**
+ * limProcessMlmDelStaRsp() - Process WDA_DELETE_STA_RSP
+ * @pMac: Global MAC context
+ * @limMsgQ: LIM Message pointer
+ *
+ * Return: None
+ */
 void limProcessMlmDelStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ )
 {
- //we need to process the deferred message since the initiating req. there might be nested request.
-  //in the case of nested request the new request initiated from the response will take care of resetting
-  //the deffered flag.
-
     tpPESession         psessionEntry;
     tpDeleteStaParams   pDeleteStaParams;
     pDeleteStaParams = (tpDeleteStaParams)limMsgQ->bodyptr;
+
+    /*
+     * we need to process the message deferred since the initiating req.
+     * There might be nested request. In the case of nested request,
+     * the new request initiated from the response will take care of resetting
+     * the deferred flag.
+     */
+
     SET_LIM_PROCESS_DEFD_MESGS(pMac, true);
 
     if(NULL == pDeleteStaParams ||
@@ -2344,6 +2355,11 @@ void limProcessMlmDelStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ )
         limProcessBtAmpApMlmDelStaRsp(pMac,limMsgQ,psessionEntry);
         return;
     }
+
+    if (LIM_IS_NDI_ROLE(psessionEntry)) {
+        lim_process_ndi_del_sta_rsp(pMac, limMsgQ, psessionEntry);
+        return;
+    }
     limProcessStaMlmDelStaRsp(pMac, limMsgQ,psessionEntry);
 }
 
@@ -2354,8 +2370,7 @@ void limProcessBtAmpApMlmDelStaRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPES
     tSirResultCodes statusCode = eSIR_SME_SUCCESS;
     if(limMsgQ->bodyptr == NULL)
     {
-      limLog( pMac, LOGE,
-           FL( "limMsgQ->bodyptry NULL"));
+      limLog(pMac, LOGE, FL("limMsgQ->bodyptr NULL"));
       return;
     }
     pStaDs = dphGetHashEntry(pMac, pDelStaParams->assocId, &psessionEntry->dph.dphHashTable);
@@ -4718,22 +4733,20 @@ limHandleDelBssInReAssocContext(tpAniSirGlobal pMac, tpDphHashNode pStaDs,tpPESe
                 vos_mem_free(pBeaconStruct);
                 goto Error;
             }
- /** While Processing the ReAssoc Response Frame the ReAssocRsp Frame
- *   is being stored to be used here for sending ADDBSS
- */
-assocRsp = (tpSirAssocRsp)psessionEntry->limAssocResponseData;
-limUpdateAssocStaDatas(pMac, pStaDs, assocRsp, psessionEntry);
-limUpdateReAssocGlobals(pMac, assocRsp, psessionEntry);
-limExtractApCapabilities(pMac,
-    (tANI_U8 *) psessionEntry->pLimReAssocReq->bssDescription.ieFields,
-    limGetIElenFromBssDescription(&psessionEntry->pLimReAssocReq->bssDescription),
-    pBeaconStruct);
+            /** While Processing the ReAssoc Response Frame the ReAssocRsp Frame
+            *   is being stored to be used here for sending ADDBSS
+            */
+            assocRsp = (tpSirAssocRsp)psessionEntry->limAssocResponseData;
+            limUpdateAssocStaDatas(pMac, pStaDs, assocRsp,psessionEntry);
+            limUpdateReAssocGlobals(pMac, assocRsp,psessionEntry);
+            limExtractApCapabilities( pMac,
+                  (tANI_U8 *) psessionEntry->pLimReAssocReq->bssDescription.ieFields,
+                  limGetIElenFromBssDescription( &psessionEntry->pLimReAssocReq->bssDescription ),
+                    pBeaconStruct );
+            if(pMac->lim.gLimProtectionControl != WNI_CFG_FORCE_POLICY_PROTECTION_DISABLE)
+                limDecideStaProtectionOnAssoc(pMac, pBeaconStruct, psessionEntry);
 
-if (pMac->lim.gLimProtectionControl != WNI_CFG_FORCE_POLICY_PROTECTION_DISABLE) {
-    limDecideStaProtectionOnAssoc(pMac, pBeaconStruct, psessionEntry);
-}
-
-                if(pBeaconStruct->erpPresent) {
+            if(pBeaconStruct->erpPresent) {
                 if (pBeaconStruct->erpIEInfo.barkerPreambleMode)
                     psessionEntry->beaconParams.fShortPreamble = 0;
                 else
@@ -5075,9 +5088,7 @@ void limProcessRxScanEvent(tpAniSirGlobal pMac, void *buf)
                  * pending then indicate confirmation with status failure
                  */
                 if (pMac->lim.mgmtFrameSessionId != 0xff) {
-                    limSendSmeRsp(pMac, eWNI_SME_ACTION_FRAME_SEND_CNF,
-                                        eSIR_SME_SEND_ACTION_FAIL,
-                                        pMac->lim.mgmtFrameSessionId, 0);
+                    limP2PActionCnf(pMac, false);
                     pMac->lim.mgmtFrameSessionId = 0xff;
                 }
 

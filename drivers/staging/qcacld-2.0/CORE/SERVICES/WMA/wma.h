@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -108,7 +108,6 @@
 #define WMA_MAX_VDEV_SIZE				20
 #define WMA_VDEV_TBL_ENTRY_ADD				1
 #define WMA_VDEV_TBL_ENTRY_DEL				0
-
 #define WMA_SVC_MSG_MAX_SIZE                            1536
 
 /* 11A/G channel boundary */
@@ -617,7 +616,7 @@ struct wma_txrx_node {
 
 	uint8_t wep_default_key_idx;
 	bool is_vdev_valid;
-
+	struct action_frame_random_filter *action_frame_filter;
 };
 
 #if defined(QCA_WIFI_FTM)
@@ -795,6 +794,7 @@ typedef struct wma_handle {
 	 */
 	u_int8_t ol_ini_info;
 	v_BOOL_t ssdp;
+	bool enable_mc_list;
 	bool enable_bcst_ptrn;
 #ifdef FEATURE_RUNTIME_PM
 	v_BOOL_t runtime_pm;
@@ -815,6 +815,13 @@ typedef struct wma_handle {
 	vos_wake_lock_t extscan_wake_lock;
 #endif
 	vos_wake_lock_t wow_wake_lock;
+	vos_wake_lock_t wow_auth_req_wl;
+	vos_wake_lock_t wow_assoc_req_wl;
+	vos_wake_lock_t wow_deauth_rec_wl;
+	vos_wake_lock_t wow_disassoc_rec_wl;
+	vos_wake_lock_t wow_ap_assoc_lost_wl;
+	vos_wake_lock_t wow_auto_shutdown_wl;
+
 	int wow_nack;
 	u_int32_t ap_client_cnt;
 	adf_os_atomic_t is_wow_bus_suspended;
@@ -903,6 +910,8 @@ typedef struct wma_handle {
 	/* NAN datapath support enabled in firmware */
 	bool nan_datapath_enabled;
 	tSirLLStatsResults *link_stats_results;
+	vos_timer_t wma_fw_time_sync_timer;
+	struct sir_allowed_action_frames allowed_action_frames;
 }t_wma_handle, *tp_wma_handle;
 
 struct wma_target_cap {
@@ -1437,6 +1446,8 @@ VOS_STATUS wma_send_snr_request(tp_wma_handle wma_handle, void *pGetRssiReq,
 #define WMA_DISASSOC_RECV_WAKE_LOCK_DURATION	(5 * 1000) /* in msec */
 #ifdef FEATURE_WLAN_AUTO_SHUTDOWN
 #define WMA_AUTO_SHUTDOWN_WAKE_LOCK_DURATION    (5 * 1000) /* in msec */
+#else
+#define WMA_AUTO_SHUTDOWN_WAKE_LOCK_DURATION 0
 #endif
 #define WMA_BMISS_EVENT_WAKE_LOCK_DURATION      (4 * 1000) /* in msec */
 
@@ -1831,6 +1842,10 @@ void wma_remove_peer(tp_wma_handle wma, u_int8_t *bssid,
 
 void wma_add_wow_wakeup_event(tp_wma_handle wma, WOW_WAKE_EVENT_TYPE event,
 			bool enable);
+VOS_STATUS wma_create_peer(tp_wma_handle wma, ol_txrx_pdev_handle pdev,
+			   ol_txrx_vdev_handle vdev, u8 peer_addr[6],
+			   u_int32_t peer_type, u_int8_t vdev_id,
+			   v_BOOL_t roam_synch_in_progress);
 WLAN_PHY_MODE wma_chan_to_mode(uint8_t chan, ePhyChanBondState chan_offset,
 		uint8_t vht_capable, uint8_t dot11_mode);
 

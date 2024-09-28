@@ -236,7 +236,7 @@ nla_put_failure:
 
 /**
  * send_msg_to_cld80211() - API to send message to user space Application
- * @cld_mcgroup_id: Multicast group ID
+ * @mcgroup_id: Multicast group ID
  * @pid: Port ID
  * @app_id: Application ID
  * @buf: Data/payload buffer to be sent
@@ -246,13 +246,13 @@ nla_put_failure:
  *
  * Return: zero on success
  */
-static int send_msg_to_cld80211(enum cld80211_multicast_groups cld_mcgroup_id,
-				int pid, int app_id, uint8_t *buf, int len)
+static int send_msg_to_cld80211(int mcgroup_id, int pid, int app_id,
+						uint8_t *buf, int len)
 {
 	struct sk_buff *msg;
+	struct genl_family *cld80211_fam = cld80211_get_genl_family();
 	int status;
 	int flags = GFP_KERNEL;
-	int mcgroup_id;
 
 	if (in_interrupt() || irqs_disabled() || in_atomic())
 		flags = GFP_ATOMIC;
@@ -269,12 +269,9 @@ static int send_msg_to_cld80211(enum cld80211_multicast_groups cld_mcgroup_id,
 		nlmsg_free(msg);
 		return -EPERM;
 	}
-	mcgroup_id = cld80211_get_mcgrp_id(cld_mcgroup_id);
-	if (mcgroup_id == -1) {
-		nlmsg_free(msg);
-		return -EINVAL;
-	}
-	genlmsg_multicast_netns(&init_net, msg, 0, mcgroup_id, flags);
+
+        genlmsg_multicast_netns(cld80211_fam, &init_net, msg, mcgroup_id, GFP_KERNEL);
+
 	return 0;
 }
 

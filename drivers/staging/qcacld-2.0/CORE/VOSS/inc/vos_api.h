@@ -75,6 +75,8 @@
 
 #define VOS_WDA_TIMEOUT 15000
 
+#define vos_roundup(x, y) roundup(x, y);
+
 /*-------------------------------------------------------------------------
   Function declarations and documenation
   ------------------------------------------------------------------------*/
@@ -338,6 +340,20 @@ v_VOID_t vos_fwDumpReq(tANI_U32 cmd, tANI_U32 arg1, tANI_U32 arg2,
 v_BOOL_t vos_is_packet_log_enabled(void);
 
 v_U64_t vos_get_monotonic_boottime(void);
+
+/**
+ * vos_get_monotonic_boottime_ns - Get kenel boottime in ns
+ *
+ * Return: kernel boottime in nano sec
+ */
+v_U64_t vos_get_monotonic_boottime_ns(void);
+
+/**
+ * vos_get_bootbased_boottime_ns - Get kenel boottime in ns
+ * it includes the system suspend time also
+ * Return: kernel boottime in nano sec
+ */
+v_U64_t vos_get_bootbased_boottime_ns(void);
 
 void vos_trigger_recovery(bool);
 

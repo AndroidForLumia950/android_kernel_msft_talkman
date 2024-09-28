@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -144,7 +144,8 @@ void hdd_softap_tx_resume_timer_expired_handler(void *adapter_context)
    }
 
    hddLog(LOG1, FL("Enabling queues"));
-   netif_tx_wake_all_queues(pAdapter->dev);
+   wlan_hdd_netif_queue_control(pAdapter, WLAN_WAKE_ALL_NETIF_QUEUE,
+                 WLAN_CONTROL_PATH);
    return;
 }
 
@@ -180,7 +181,9 @@ void hdd_softap_tx_resume_cb(void *adapter_context,
        }
 
        hddLog(LOG1, FL("Enabling queues"));
-       netif_tx_wake_all_queues(pAdapter->dev);
+       wlan_hdd_netif_queue_control(pAdapter,
+            WLAN_WAKE_ALL_NETIF_QUEUE,
+            WLAN_DATA_FLOW_CONTROL);
        pAdapter->hdd_stats.hddTxRxStats.txflow_unpause_cnt++;
        pAdapter->hdd_stats.hddTxRxStats.is_txflow_paused = FALSE;
 
@@ -189,7 +192,9 @@ void hdd_softap_tx_resume_cb(void *adapter_context,
     else if (VOS_FALSE == tx_resume)  /* Pause TX  */
     {
         hddLog(LOG1, FL("Disabling queues"));
-        netif_tx_stop_all_queues(pAdapter->dev);
+        wlan_hdd_netif_queue_control(pAdapter,
+            WLAN_STOP_ALL_NETIF_QUEUE,
+            WLAN_DATA_FLOW_CONTROL);
         if (VOS_TIMER_STATE_STOPPED ==
             vos_timer_getCurrentState(&pAdapter->tx_flow_control_timer))
         {
@@ -265,6 +270,10 @@ int __hdd_softap_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
    while (skb) {
        skb_next = skb->next;
+       /* memset skb control block */
+       vos_mem_zero(skb->cb, sizeof(skb->cb));
+       wlan_hdd_classify_pkt(skb);
+
        pDestMacAddress = (v_MACADDR_t*)skb->data;
 
        if (vos_is_macaddr_broadcast( pDestMacAddress ) ||
@@ -335,7 +344,8 @@ int __hdd_softap_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
                (VOS_TIMER_STATE_STOPPED ==
                 vos_timer_getCurrentState(&pAdapter->tx_flow_control_timer))) {
                hddLog(LOG1, FL("Disabling queues"));
-               netif_tx_stop_all_queues(dev);
+               wlan_hdd_netif_queue_control(pAdapter, WLAN_STOP_ALL_NETIF_QUEUE,
+                           WLAN_DATA_FLOW_CONTROL);
                vos_timer_start(&pAdapter->tx_flow_control_timer,
                                WLAN_SAP_HDD_TX_FLOW_CONTROL_OS_Q_BLOCK_TIME);
                pAdapter->hdd_stats.hddTxRxStats.txflow_timer_cnt++;
@@ -348,9 +358,6 @@ int __hdd_softap_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
        //Get TL AC corresponding to Qdisc queue index/AC.
        ac = hdd_QdiscAcToTlAC[skb->queue_mapping];
        ++pAdapter->hdd_stats.hddTxRxStats.txXmitClassifiedAC[ac];
-
-       adf_dp_trace_log_pkt(pAdapter->sessionId, skb,
-                          WIFI_EVENT_DRIVER_EAPOL_FRAME_TRANSMIT_REQUESTED);
 
 #ifdef QCA_PKT_PROTO_TRACE
        if ((hddCtxt->cfg_ini->gEnableDebugLog & VOS_PKT_TRAC_TYPE_EAPOL) ||
@@ -391,19 +398,22 @@ int __hdd_softap_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
            list_tail->next = skb;
            list_tail = list_tail->next;
        }
-       vos_mem_zero(skb->cb, sizeof(skb->cb));
+
+       adf_dp_trace_log_pkt(pAdapter->sessionId, skb, ADF_TX);
        NBUF_SET_PACKET_TRACK(skb, NBUF_TX_PKT_DATA_TRACK);
        NBUF_UPDATE_TX_PKT_COUNT(skb, NBUF_TX_PKT_HDD);
 
-       adf_dp_trace_set_track(skb);
-       DPTRACE(adf_dp_trace(skb, ADF_DP_TRACE_HDD_PACKET_PTR_RECORD,
-                  (uint8_t *)&skb->data, sizeof(skb->data)));
-       DPTRACE(adf_dp_trace(skb, ADF_DP_TRACE_HDD_PACKET_RECORD,
-                  (uint8_t *)skb->data, skb->len));
-       if (skb->len > ADF_DP_TRACE_RECORD_SIZE)
-            DPTRACE(adf_dp_trace(skb, ADF_DP_TRACE_HDD_PACKET_RECORD,
-                  (uint8_t *)&skb->data[ADF_DP_TRACE_RECORD_SIZE],
-                  (skb->len - ADF_DP_TRACE_RECORD_SIZE)));
+       adf_dp_trace_set_track(skb, ADF_TX);
+       DPTRACE(adf_dp_trace(skb, ADF_DP_TRACE_HDD_TX_PACKET_PTR_RECORD,
+                  (uint8_t *)&skb->data, sizeof(skb->data), ADF_TX));
+       DPTRACE(adf_dp_trace(skb, ADF_DP_TRACE_HDD_TX_PACKET_RECORD,
+                  (uint8_t *)skb->data, adf_nbuf_len(skb), ADF_TX));
+
+       if (adf_nbuf_len(skb) > ADF_DP_TRACE_RECORD_SIZE)
+            DPTRACE(adf_dp_trace(skb, ADF_DP_TRACE_HDD_TX_PACKET_RECORD,
+                    (uint8_t *)&skb->data[ADF_DP_TRACE_RECORD_SIZE],
+                    (adf_nbuf_len(skb) - ADF_DP_TRACE_RECORD_SIZE),
+                    ADF_TX));
 
        skb = skb_next;
        continue;
@@ -469,11 +479,11 @@ static void __hdd_softap_tx_timeout(struct net_device *dev)
 {
    hdd_adapter_t *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
    hdd_context_t *hdd_ctx;
+   struct netdev_queue *txq;
+   int i = 0;
 
    DPTRACE(adf_dp_trace(NULL, ADF_DP_TRACE_HDD_SOFTAP_TX_TIMEOUT,
-                        NULL, 0));
-   VOS_TRACE( VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_ERROR,
-      "%s: Transmission timeout occurred", __func__);
+                        NULL, 0, ADF_TX));
 
    hdd_ctx = WLAN_HDD_GET_CTX(adapter);
    if (hdd_ctx->isLogpInProgress) {
@@ -488,6 +498,19 @@ static void __hdd_softap_tx_timeout(struct net_device *dev)
     * case of disassociation it is ok to ignore this. But if associated, we have
     * do possible recovery here.
     */
+
+    VOS_TRACE(VOS_MODULE_ID_HDD_SAP_DATA, VOS_TRACE_LEVEL_ERROR,
+        "%s: Transmission timeout occurred jiffies %lu trans_start %lu",
+        __func__, jiffies, dev->trans_start);
+
+    for (i = 0; i < NUM_TX_QUEUES; i++) {
+        txq = netdev_get_tx_queue(dev, i);
+        VOS_TRACE(VOS_MODULE_ID_HDD_SAP_DATA,
+             VOS_TRACE_LEVEL_ERROR,
+             "Queue%d status: %d txq->trans_start %lu",
+             i, netif_tx_queue_stopped(txq), txq->trans_start);
+    }
+    wlan_display_tx_timeout_stats(adapter);
 }
 
 /**
@@ -827,8 +850,21 @@ VOS_STATUS hdd_softap_rx_packet_cbk(v_VOID_t *vosContext,
       ++pAdapter->stats.rx_packets;
       pAdapter->stats.rx_bytes += skb->len;
 
-      adf_dp_trace_log_pkt(pAdapter->sessionId, skb,
-          WIFI_EVENT_DRIVER_EAPOL_FRAME_RECEIVED);
+      DPTRACE(adf_dp_trace(skb,
+              ADF_DP_TRACE_RX_HDD_PACKET_PTR_RECORD,
+              adf_nbuf_data_addr(skb),
+              sizeof(adf_nbuf_data(skb)), ADF_RX));
+      DPTRACE(adf_dp_trace(skb,
+              ADF_DP_TRACE_HDD_RX_PACKET_RECORD,
+              (uint8_t *)skb->data, adf_nbuf_len(skb), ADF_RX));
+
+      if (adf_nbuf_len(skb) > ADF_DP_TRACE_RECORD_SIZE)
+          DPTRACE(adf_dp_trace(skb,
+                  ADF_DP_TRACE_HDD_RX_PACKET_RECORD,
+                  (uint8_t *)&skb->data[ADF_DP_TRACE_RECORD_SIZE],
+                  (adf_nbuf_len(skb) - ADF_DP_TRACE_RECORD_SIZE),
+                  ADF_RX));
+
 #ifdef QCA_PKT_PROTO_TRACE
       if ((pHddCtx->cfg_ini->gEnableDebugLog & VOS_PKT_TRAC_TYPE_EAPOL) ||
           (pHddCtx->cfg_ini->gEnableDebugLog & VOS_PKT_TRAC_TYPE_DHCP)) {
@@ -865,12 +901,14 @@ VOS_STATUS hdd_softap_rx_packet_cbk(v_VOID_t *vosContext,
       if (skb->next) {
          rxstat = netif_rx(skb);
       } else {
+#ifdef WLAN_FEATURE_RX_WAKELOCK
          if ((pHddCtx->cfg_ini->rx_wakelock_timeout) &&
              (PACKET_BROADCAST != skb->pkt_type) &&
              (PACKET_MULTICAST != skb->pkt_type))
 	    vos_wake_lock_timeout_acquire(&pHddCtx->rx_wake_lock,
                         pHddCtx->cfg_ini->rx_wakelock_timeout,
                         WIFI_POWER_EVENT_WAKELOCK_HOLD_RX);
+#endif
          /*
           * This is the last packet on the chain
           * Scheduling rx sirq
@@ -1077,11 +1115,11 @@ VOS_STATUS hdd_softap_RegisterSTA( hdd_adapter_t *pAdapter,
 
    }
 
-   netif_carrier_on(pAdapter->dev);
    //Enable Tx queue
    hddLog(LOG1, FL("Enabling queues"));
-   netif_tx_start_all_queues(pAdapter->dev);
-
+   wlan_hdd_netif_queue_control(pAdapter,
+        WLAN_START_ALL_NETIF_QUEUE_N_CARRIER,
+        WLAN_CONTROL_PATH);
    return( vosStatus );
 }
 

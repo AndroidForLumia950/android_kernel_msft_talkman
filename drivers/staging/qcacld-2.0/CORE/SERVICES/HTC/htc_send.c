@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -645,9 +645,9 @@ static A_STATUS HTCIssuePackets(HTC_TARGET       *target,
 	target->CE_send_cnt++;
 
         if (adf_os_unlikely(A_FAILED(status))) {
-                /* TODO : if more than 1 endpoint maps to the same PipeID it is possible
-                 * to run out of resources in the HIF layer. Don't emit the error */
-                AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("HIFSend Failed status:%d \n",status));
+            /* TODO : if more than 1 endpoint maps to the same PipeID it is possible
+             * to run out of resources in the HIF layer. Don't emit the error */
+            AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("HIFSend Failed status: %d\n", status));
             LOCK_HTC_TX(target);
 	    target->CE_send_cnt--;
             pEndpoint->ul_outstanding_cnt--;
@@ -678,7 +678,7 @@ static A_STATUS HTCIssuePackets(HTC_TARGET       *target,
             ("htc_issue_packets, failed pkt:0x%p status:%d",
             pPacket, status));
 
-    AR_DEBUG_PRINTF(ATH_DEBUG_SEND, ("-HTCIssuePackets \n"));
+    AR_DEBUG_PRINTF(ATH_DEBUG_SEND, ("-HTCIssuePackets\n"));
 
     return status;
 }
@@ -1133,7 +1133,7 @@ static HTC_SEND_QUEUE_RESULT HTCTrySend(HTC_TARGET       *target,
         UNLOCK_HTC_TX(target);
 
             /* send what we can */
-        result = HTCIssuePackets(target,pEndpoint,&sendQueue);
+        result = HTCIssuePackets(target, pEndpoint, &sendQueue);
         if (result) {
             AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
                ("htc_issue_packets, failed status:%d put it back to head of callers SendQueue",
@@ -1326,7 +1326,7 @@ A_STATUS HTCSendDataPkt(HTC_HANDLE HTCHandle, adf_nbuf_t       netbuf, int Epid,
     NBUF_UPDATE_TX_PKT_COUNT(netbuf, NBUF_TX_PKT_HTC);
     DPTRACE(adf_dp_trace(netbuf, ADF_DP_TRACE_HTC_PACKET_PTR_RECORD,
                 adf_nbuf_data_addr(netbuf),
-                sizeof(adf_nbuf_data(netbuf))));
+                sizeof(adf_nbuf_data(netbuf)), ADF_TX));
 
     status = HIFSend_head(target->hif_dev,
             pEndpoint->UL_PipeID,

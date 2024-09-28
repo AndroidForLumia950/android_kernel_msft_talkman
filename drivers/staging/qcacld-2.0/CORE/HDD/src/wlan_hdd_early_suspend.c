@@ -40,6 +40,7 @@
 *   Include files
 * ----------------------------------------------------------------------------*/
 
+#include <net/addrconf.h>
 #include <linux/pm.h>
 #include <linux/wait.h>
 #include <linux/cpu.h>
@@ -68,7 +69,6 @@
 #include <linux/inetdevice.h>
 #include <wlan_hdd_cfg.h>
 #include <wlan_hdd_cfg80211.h>
-#include <net/addrconf.h>
 #ifdef IPA_OFFLOAD
 #include <wlan_hdd_ipa.h>
 #endif
@@ -96,6 +96,7 @@
 #elif defined(HIF_SDIO)
 #include "if_ath_sdio.h"
 #endif
+#include <wlan_hdd_p2p.h>
 
 #include "ol_fw.h"
 /* Time in msec */
@@ -343,8 +344,8 @@ VOS_STATUS hdd_enter_deep_sleep(hdd_context_t *pHddCtx, hdd_adapter_t *pAdapter)
 
    //Stop the Interface TX queue.
    hddLog(LOG1, FL("Disabling queues"));
-   netif_tx_disable(pAdapter->dev);
-   netif_carrier_off(pAdapter->dev);
+   wlan_hdd_netif_queue_control(pAdapter, WLAN_NETIF_TX_DISABLE_N_CARRIER,
+        WLAN_CONTROL_PATH);
 
    //Disable IMPS,BMPS as we do not want the device to enter any power
    //save mode on it own during suspend sequence
@@ -592,7 +593,8 @@ static int __wlan_hdd_ipv6_changed(struct notifier_block *nb,
 	if (WLAN_HDD_GET_CTX(adapter) != hdd_ctx) return NOTIFY_DONE;
 
 	if (adapter->device_mode == WLAN_HDD_INFRA_STATION ||
-		(adapter->device_mode == WLAN_HDD_P2P_CLIENT)) {
+	    adapter->device_mode == WLAN_HDD_P2P_CLIENT ||
+	    adapter->device_mode == WLAN_HDD_NDI) {
 		if (hdd_ctx->cfg_ini->nEnableSuspend ==
 			WLAN_MAP_SUSPEND_TO_MCAST_BCAST_FILTER &&
 			hdd_ctx->ns_offload_enable)
@@ -832,8 +834,10 @@ void hdd_conf_ns_offload(hdd_adapter_t *pAdapter, int fenable)
                                                     SIR_IPV6_ADDR_VALID;
                 offLoadRequest.nsOffloadInfo.target_ipv6_addr_type[i] =
                                                        ipv6_addr_type[i];
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
                 hdd_wlan_offload_event(SIR_IPV6_NS_OFFLOAD,
                                                SIR_OFFLOAD_ENABLE);
+#endif
                 vos_mem_copy(&offLoadRequest.params.hostIpv6Addr,
                    &offLoadRequest.nsOffloadInfo.targetIPv6Addr[i],
                    sizeof(tANI_U8)*SIR_MAC_IPV6_ADDR_LEN);
@@ -875,8 +879,10 @@ disable_ns:
         vos_mem_zero((void *)&offLoadRequest, sizeof(tSirHostOffloadReq));
         offLoadRequest.enableOrDisable = SIR_OFFLOAD_DISABLE;
         offLoadRequest.offloadType =  SIR_IPV6_NS_OFFLOAD;
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
         hdd_wlan_offload_event(SIR_IPV6_NS_OFFLOAD,
                                            SIR_OFFLOAD_DISABLE);
+#endif
 
         if (eHAL_STATUS_SUCCESS !=
              sme_SetHostOffload(WLAN_HDD_GET_HAL_CTX(pAdapter),
@@ -900,6 +906,7 @@ static void __hdd_ipv6_notifier_work_queue(struct work_struct *work)
              container_of(work, hdd_adapter_t, ipv6NotifierWorkQueue);
     hdd_context_t *pHddCtx;
     int status;
+    bool ndi_connected = false;
 
     ENTER();
 
@@ -920,8 +927,13 @@ static void __hdd_ipv6_notifier_work_queue(struct work_struct *work)
         pHddCtx->sus_res_mcastbcast_filter_valid = VOS_TRUE;
     }
 
+    /* check if the device is in NAN data mode */
+    if (WLAN_HDD_IS_NDI(pAdapter))
+        ndi_connected = WLAN_HDD_IS_NDI_CONNECTED(pAdapter);
+
     if ((eConnectionState_Associated ==
-            (WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))->conn_info.connState)) {
+            (WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))->conn_info.connState ||
+         ndi_connected)) {
         /*
          * This invocation being part of the IPv6 registration callback,
          * we are passing second parameter as 2 to avoid registration
@@ -1095,6 +1107,7 @@ static void __hdd_ipv4_notifier_work_queue(struct work_struct *work)
              container_of(work, hdd_adapter_t, ipv4NotifierWorkQueue);
     hdd_context_t *pHddCtx;
     int status;
+    bool ndi_connected = false;
 
     hddLog(LOG1, FL("Reconfiguring ARP Offload"));
     pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
@@ -1113,8 +1126,13 @@ static void __hdd_ipv4_notifier_work_queue(struct work_struct *work)
         pHddCtx->sus_res_mcastbcast_filter_valid = VOS_TRUE;
     }
 
+    /* check if the device is in NAN data mode */
+    if (WLAN_HDD_IS_NDI(pAdapter))
+        ndi_connected = WLAN_HDD_IS_NDI_CONNECTED(pAdapter);
+
     if ((eConnectionState_Associated ==
-            (WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))->conn_info.connState)) {
+            (WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))->conn_info.connState ||
+         ndi_connected)) {
         /*
          * This invocation being part of the IPv4 registration callback,
          * we are passing second parameter as 2 to avoid registration
@@ -1159,7 +1177,8 @@ static int __wlan_hdd_ipv4_changed(struct notifier_block *nb,
 	if (adapter->dev != ndev) return NOTIFY_DONE;
 	if (WLAN_HDD_GET_CTX(adapter) != hdd_ctx) return NOTIFY_DONE;
         if (!(adapter->device_mode == WLAN_HDD_INFRA_STATION ||
-                adapter->device_mode == WLAN_HDD_P2P_CLIENT))
+	      adapter->device_mode == WLAN_HDD_P2P_CLIENT ||
+	      adapter->device_mode == WLAN_HDD_NDI))
 		return NOTIFY_DONE;
 
 	if ((hdd_ctx->cfg_ini->nEnableSuspend !=
@@ -1268,8 +1287,10 @@ VOS_STATUS hdd_conf_arp_offload(hdd_adapter_t *pAdapter, int fenable)
        {
            offLoadRequest.offloadType =  SIR_IPV4_ARP_REPLY_OFFLOAD;
            offLoadRequest.enableOrDisable = SIR_OFFLOAD_ENABLE;
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
            hdd_wlan_offload_event(SIR_IPV4_ARP_REPLY_OFFLOAD,
                                            SIR_OFFLOAD_ENABLE);
+#endif
 
            hddLog(VOS_TRACE_LEVEL_INFO, "%s: Enabled", __func__);
 
@@ -1284,8 +1305,10 @@ VOS_STATUS hdd_conf_arp_offload(hdd_adapter_t *pAdapter, int fenable)
                hddLog(VOS_TRACE_LEVEL_INFO,
                       "offload: inside arp offload conditional check");
            }
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
            hdd_wlan_offload_event(SIR_OFFLOAD_ARP_AND_BCAST_FILTER_ENABLE,
                                            SIR_OFFLOAD_ENABLE);
+#endif
            hddLog(VOS_TRACE_LEVEL_INFO, "offload: arp filter programmed = %d",
                   offLoadRequest.enableOrDisable);
 
@@ -1322,8 +1345,10 @@ VOS_STATUS hdd_conf_arp_offload(hdd_adapter_t *pAdapter, int fenable)
        vos_mem_zero((void *)&offLoadRequest, sizeof(tSirHostOffloadReq));
        offLoadRequest.enableOrDisable = SIR_OFFLOAD_DISABLE;
        offLoadRequest.offloadType =  SIR_IPV4_ARP_REPLY_OFFLOAD;
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
        hdd_wlan_offload_event(SIR_IPV4_ARP_REPLY_OFFLOAD,
                                            SIR_OFFLOAD_DISABLE);
+#endif
 
        if (eHAL_STATUS_SUCCESS !=
                  sme_SetHostOffload(WLAN_HDD_GET_HAL_CTX(pAdapter),
@@ -1453,7 +1478,7 @@ static void hdd_conf_suspend_ind(hdd_context_t* pHddCtx,
     hddLog(VOS_TRACE_LEVEL_INFO,
       "%s: send wlan suspend indication", __func__);
 
-    if((pHddCtx->cfg_ini->nEnableSuspend == WLAN_MAP_SUSPEND_TO_MCAST_BCAST_FILTER))
+    if(pHddCtx->cfg_ini->nEnableSuspend == WLAN_MAP_SUSPEND_TO_MCAST_BCAST_FILTER)
     {
         //Configure supported OffLoads
         hdd_conf_hostoffload(pAdapter, TRUE);
@@ -1586,8 +1611,9 @@ void hdd_suspend_wlan(void (*callback)(void *callbackContext, boolean suspended)
        {
           //stop the interface before putting the chip to standby
           hddLog(LOG1, FL("Disabling queues"));
-          netif_tx_disable(pAdapter->dev);
-          netif_carrier_off(pAdapter->dev);
+          wlan_hdd_netif_queue_control(pAdapter,
+            WLAN_NETIF_TX_DISABLE_N_CARRIER,
+            WLAN_CONTROL_PATH);
        }
        else if (pHddCtx->cfg_ini->nEnableSuspend ==
                WLAN_MAP_SUSPEND_TO_DEEP_SLEEP)
@@ -1600,7 +1626,8 @@ void hdd_suspend_wlan(void (*callback)(void *callbackContext, boolean suspended)
 send_suspend_ind:
        //stop all TX queues before suspend
        hddLog(LOG1, FL("Disabling queues"));
-       netif_tx_disable(pAdapter->dev);
+       wlan_hdd_netif_queue_control(pAdapter, WLAN_NETIF_TX_DISABLE,
+                  WLAN_CONTROL_PATH);
        WLANTL_PauseUnPauseQs(pVosContext, true);
 
       /* Keep this suspend indication at the end (before processing next adaptor)
@@ -1849,7 +1876,9 @@ send_resume_ind:
       hddLog(LOG1, FL("Enabling queues"));
       WLANTL_PauseUnPauseQs(pVosContext, false);
 
-      netif_tx_wake_all_queues(pAdapter->dev);
+      wlan_hdd_netif_queue_control(pAdapter,
+            WLAN_WAKE_ALL_NETIF_QUEUE,
+            WLAN_CONTROL_PATH);
 
       hdd_conf_resume_ind(pAdapter);
 
@@ -1968,6 +1997,7 @@ VOS_STATUS hdd_wlan_shutdown(void)
            vos_timer_getCurrentState(&pHddCtx->bus_bw_timer))
    {
       vos_timer_stop(&pHddCtx->bus_bw_timer);
+      hdd_rst_tcp_delack(pHddCtx);
    }
 #endif
 
@@ -2307,6 +2337,10 @@ VOS_STATUS hdd_wlan_re_init(void *hif_sc)
    /* Register TM level change handler function to the platform */
    hddDevTmRegisterNotifyCallback(pHddCtx);
 
+   pHddCtx->last_scan_reject_session_id = 0xFF;
+   pHddCtx->last_scan_reject_reason = 0;
+   pHddCtx->last_scan_reject_timestamp = 0;
+
    pHddCtx->hdd_mcastbcast_filter_set = FALSE;
    pHddCtx->btCoexModeSet = false;
    hdd_register_mcast_bcast_filter(pHddCtx);
@@ -2325,6 +2359,9 @@ VOS_STATUS hdd_wlan_re_init(void *hif_sc)
    vos_set_reinit_in_progress(VOS_MODULE_ID_VOSS, FALSE);
 
    sme_register_mgmt_frame_ind_callback(pHddCtx->hHal, hdd_indicate_mgmt_frame);
+
+   /* Register for p2p ack indication */
+   sme_register_p2p_ack_ind_callback(pHddCtx->hHal, hdd_send_action_cnf_cb);
 
 #ifdef FEATURE_WLAN_EXTSCAN
    sme_ExtScanRegisterCallback(pHddCtx->hHal,

@@ -163,7 +163,9 @@ void sme_SetFTIEs(tHalHandle hHal, tANI_U32 sessionId, const tANI_U8 *ft_ies,
    {
       case eFT_START_READY:
       case eFT_AUTH_REQ_READY:
+#if defined WLAN_FEATURE_VOWIFI_11R_DEBUG
          smsLog( pMac, LOG1, FL("ft_ies_length: %d"), ft_ies_length);
+#endif
          if ((pSession->ftSmeContext.auth_ft_ies) &&
                (pSession->ftSmeContext.auth_ft_ies_length))
          {

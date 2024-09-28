@@ -137,7 +137,8 @@ typedef struct {
 enum qca_nl80211_vendor_subcmds {
     QCA_NL80211_VENDOR_SUBCMD_UNSPEC = 0,
     QCA_NL80211_VENDOR_SUBCMD_TEST = 1,
-    /* subcmds 2..9 not yet allocated */
+    /* subcmds 2..8 not yet allocated */
+    QCA_NL80211_VENDOR_SUBCMD_ROAMING = 9,
     QCA_NL80211_VENDOR_SUBCMD_AVOID_FREQUENCY = 10,
     QCA_NL80211_VENDOR_SUBCMD_DFS_CAPABILITY =  11,
     QCA_NL80211_VENDOR_SUBCMD_NAN =  12,
@@ -266,6 +267,7 @@ enum qca_nl80211_vendor_subcmds {
 	/* subcommand to get link properties */
 	QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES = 101,
 	QCA_NL80211_VENDOR_SUBCMD_SETBAND = 105,
+	QCA_NL80211_VENDOR_SUBCMD_SET_SAP_CONFIG  = 118,
 };
 
 enum qca_nl80211_vendor_subcmds_index {
@@ -408,9 +410,11 @@ enum qca_wlan_vendor_attr {
     QCA_WLAN_VENDOR_ATTR_NAN = 2,
     /* used by QCA_NL80211_VENDOR_SUBCMD_STATS_EXT */
     QCA_WLAN_VENDOR_ATTR_STATS_EXT = 3,
+    /* used by QCA_NL80211_VENDOR_SUBCMD_STATS_EXT */
     QCA_WLAN_VENDOR_ATTR_IFINDEX = 4,
 
-    /* used by QCA_NL80211_VENDOR_SUBCMD_LINK_PROPERTIES */
+    /* used by QCA_NL80211_VENDOR_SUBCMD_ROAMING */
+    QCA_WLAN_VENDOR_ATTR_ROAMING_POLICY = 5,
     QCA_WLAN_VENDOR_ATTR_MAC_ADDR = 6,
 
     /* used by QCA_NL80211_VENDOR_SUBCMD_GET_FEATURES */
@@ -782,6 +786,11 @@ enum qca_wlan_vendor_attr_extscan_results
      */
     QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_BUCKETS_SCANNED,
 
+    /*
+     * Unsigned 32bit value; a EXTSCAN Capabilities attribute to send maximum
+     * number of blacklist bssid's that firmware can support.
+     */
+    QCA_WLAN_VENDOR_ATTR_EXTSCAN_MAX_NUM_BLACKLISTED_BSSID,
 
     /* keep last */
     QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_AFTER_LAST,
@@ -1466,6 +1475,10 @@ enum qca_wlan_vendor_features {
 #define WIFI_FEATURE_MKEEP_ALIVE        0x100000  /* WiFi mkeep_alive */
 #define WIFI_FEATURE_CONFIG_NDO         0x200000  /* ND offload configure */
 #define WIFI_FEATURE_TX_TRANSMIT_POWER  0x400000  /* Tx transmit power levels */
+#define WIFI_FEATURE_CONTROL_ROAMING    0x800000  /* Enable/Disable roaming */
+#define WIFI_FEATURE_IE_WHITELIST       0x1000000 /* Support Probe IE white listing */
+#define WIFI_FEATURE_SCAN_RAND          0x2000000 /* Support MAC & Probe Sequence Number randomization */
+
 
 /* Add more features here */
 #define WIFI_TDLS_SUPPORT			BIT(0)
@@ -1766,6 +1779,16 @@ enum qca_wlan_vendor_drv_info {
  * Rx wake packet count due to ipv6 multicast
  * @QCA_WLAN_VENDOR_ATTR_OTHER_RX_MULTICAST_CNT:
  * Rx wake packet count due to non-ipv4 and non-ipv6 packets
+ * @QCA_WLAN_VENDOR_ATTR_RSSI_BREACH_CNT:
+ * wake rssi breach packet count
+ * @QCA_WLAN_VENDOR_ATTR_LOW_RSSI_CNT:
+ * wake low rssi packet count
+ * @QCA_WLAN_VENDOR_ATTR_GSCAN_CNT:
+ * wake gscan packet count
+ * @QCA_WLAN_VENDOR_ATTR_PNO_COMPLETE_CNT:
+ * wake pno complete packet count
+ * @QCA_WLAN_VENDOR_ATTR_PNO_MATCH_CNT:
+ * wake pno match packet count
  */
 enum qca_wlan_vendor_attr_wake_stats {
 	QCA_WLAN_VENDOR_ATTR_GET_WAKE_STATS_INVALID = 0,
@@ -1787,10 +1810,31 @@ enum qca_wlan_vendor_attr_wake_stats {
 	QCA_WLAN_VENDOR_ATTR_ICMP4_RX_MULTICAST_CNT,
 	QCA_WLAN_VENDOR_ATTR_ICMP6_RX_MULTICAST_CNT,
 	QCA_WLAN_VENDOR_ATTR_OTHER_RX_MULTICAST_CNT,
+	QCA_WLAN_VENDOR_ATTR_RSSI_BREACH_CNT,
+	QCA_WLAN_VENDOR_ATTR_LOW_RSSI_CNT,
+	QCA_WLAN_VENDOR_ATTR_GSCAN_CNT,
+	QCA_WLAN_VENDOR_ATTR_PNO_COMPLETE_CNT,
+	QCA_WLAN_VENDOR_ATTR_PNO_MATCH_CNT,
 	/* keep last */
 	QCA_WLAN_VENDOR_GET_WAKE_STATS_AFTER_LAST,
 	QCA_WLAN_VENDOR_GET_WAKE_STATS_MAX =
 		QCA_WLAN_VENDOR_GET_WAKE_STATS_AFTER_LAST - 1,
+};
+
+ /**
+  * enum qca_wlan_vendor_attr_sap_config - config params for sap configuration
+  * @QCA_WLAN_VENDOR_ATTR_SAP_CONFIG_INVALID: invalid
+  * @QCA_WLAN_VENDOR_ATTR_SAP_CONFIG_CHANNEL: Channel on which SAP should start
+  * @QCA_WLAN_VENDOR_ATTR_SAP_CONFIG_AFTER_LAST: after last
+  * @QCA_WLAN_VENDOR_ATTR_SAP_CONFIG_MAX: max attribute
+  */
+enum qca_wlan_vendor_attr_sap_config {
+	QCA_WLAN_VENDOR_ATTR_SAP_CONFIG_INVALID = 0,
+	QCA_WLAN_VENDOR_ATTR_SAP_CONFIG_CHANNEL,
+
+	QCA_WLAN_VENDOR_ATTR_SAP_CONFIG_AFTER_LAST,
+	QCA_WLAN_VENDOR_ATTR_SAP_CONFIG_MAX =
+		QCA_WLAN_VENDOR_ATTR_SAP_CONFIG_AFTER_LAST - 1,
 };
 
 struct cfg80211_bss* wlan_hdd_cfg80211_update_bss_db( hdd_adapter_t *pAdapter,
@@ -1878,20 +1922,6 @@ int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
 int wlan_hdd_cfg80211_del_station(struct wiphy *wiphy,
                                   struct net_device *dev, u8 *mac);
 #endif
-
-/**
- * enum wlan_hdd_scan_type_for_randomization - type of scan
- * @WLAN_HDD_HOST_SCAN: refers to scan request from cfg80211_ops "scan"
- * @WLAN_HDD_PNO_SCAN: refers to scan request is from "sched_scan_start"
- *
- * driver uses this enum to identify source of scan
- *
- */
-enum wlan_hdd_scan_type_for_randomization {
-	WLAN_HDD_HOST_SCAN,
-	WLAN_HDD_PNO_SCAN,
-};
-
 #endif
 
 #if  defined(QCA_WIFI_FTM)     && defined(CONFIG_NL80211_TESTMODE)
@@ -1962,5 +1992,40 @@ void wlan_hdd_clear_link_layer_stats(hdd_adapter_t *adapter);
 #else
 static inline void wlan_hdd_clear_link_layer_stats(hdd_adapter_t *adapter) {}
 #endif
+
+struct cfg80211_bss *wlan_hdd_cfg80211_inform_bss_frame(hdd_adapter_t *pAdapter,
+		tSirBssDescription *bss_desc);
+
+#if defined(CFG80211_DISCONNECTED_V2) || \
+(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0))
+static inline void wlan_hdd_cfg80211_indicate_disconnect(struct net_device *dev,
+							bool locally_generated,
+							int reason)
+{
+	cfg80211_disconnected(dev, reason, NULL, 0,
+				locally_generated, GFP_KERNEL);
+}
+#else
+static inline void wlan_hdd_cfg80211_indicate_disconnect(struct net_device *dev,
+							bool locally_generated,
+							int reason)
+{
+	cfg80211_disconnected(dev, reason, NULL, 0,
+				GFP_KERNEL);
+}
+#endif
+
+/**
+ * enum wlan_hdd_scan_type - type of scan
+ * @WLAN_HDD_HOST_SCAN: refers to scan request from cfg80211_ops "scan"
+ * @WLAN_HDD_PNO_SCAN: refers to scan request is from "sched_scan_start"
+ *
+ * driver uses this enum to identify source of scan
+ *
+ */
+enum wlan_hdd_scan_type {
+	WLAN_HDD_HOST_SCAN,
+	WLAN_HDD_PNO_SCAN,
+};
 
 #endif

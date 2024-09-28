@@ -43,6 +43,7 @@
 #include "vos_utils.h"
 #include "wdi_out.h"
 #include "ol_rx_fwd.h"
+#include "ol_txrx.h"
 
 #define TLSHIM_PEER_AUTHORIZE_WAIT 50
 
@@ -461,6 +462,94 @@ is_ccmp_pn_replay_attack(void *vos_ctx, struct ieee80211_frame *wh,
 }
 #endif
 
+/**
+ * tlshim_is_pkt_drop_candidate() - check if the mgmt frame should be droppped
+ * @wma_handle: wma handle
+ * @peer_addr: peer MAC address
+ * @subtype: Management frame subtype
+ *
+ * This function is used to decide if a particular management frame should be
+ * dropped to prevent DOS attack. Timestamp is used to decide the DOS attack.
+ *
+ * Return: true if the packet should be dropped and false oterwise
+ */
+static bool tlshim_is_pkt_drop_candidate(tp_wma_handle wma_handle,
+					 uint8_t *peer_addr, uint8_t subtype)
+{
+	struct ol_txrx_peer_t *peer;
+	struct ol_txrx_pdev_t *pdev_ctx;
+	uint8_t peer_id;
+	tANI_BOOLEAN should_drop = eANI_BOOLEAN_FALSE;
+
+	/*
+	 * Currently this function handles only Disassoc,
+	 * Deauth and Assoc req frames. Return false for all other frames.
+	 */
+	if (subtype != IEEE80211_FC0_SUBTYPE_DISASSOC &&
+	    subtype != IEEE80211_FC0_SUBTYPE_DEAUTH &&
+	    subtype != IEEE80211_FC0_SUBTYPE_ASSOC_REQ) {
+		should_drop = FALSE;
+		goto end;
+	}
+
+	pdev_ctx = vos_get_context(VOS_MODULE_ID_TXRX, wma_handle->vos_context);
+	if (!pdev_ctx) {
+		TLSHIM_LOGE(FL("Failed to get the context"));
+		should_drop = TRUE;
+		goto end;
+	}
+
+	peer = ol_txrx_find_peer_by_addr(pdev_ctx, peer_addr, &peer_id);
+	if (!peer) {
+		if (SIR_MAC_MGMT_ASSOC_REQ != subtype) {
+			TLSHIM_LOGE(FL("Received mgmt frame: %0x from unknow peer: %pM"),
+				subtype, peer_addr);
+			should_drop = TRUE;
+		}
+		goto end;
+	}
+
+	switch (subtype) {
+	case SIR_MAC_MGMT_ASSOC_REQ:
+		if (peer->last_assoc_rcvd) {
+			if (adf_os_gettimestamp() - peer->last_assoc_rcvd <
+			    TLSHIM_MGMT_FRAME_DETECT_DOS_TIMER) {
+				TLSHIM_LOGD(FL("Dropping Assoc Req received"));
+				should_drop = TRUE;
+			}
+		}
+		peer->last_assoc_rcvd = adf_os_gettimestamp();
+		break;
+	case SIR_MAC_MGMT_DISASSOC:
+		if (peer->last_disassoc_rcvd) {
+			if (adf_os_gettimestamp() -
+			    peer->last_disassoc_rcvd <
+			    TLSHIM_MGMT_FRAME_DETECT_DOS_TIMER) {
+				TLSHIM_LOGD(FL("Dropping DisAssoc received"));
+				should_drop = TRUE;
+			}
+		}
+		peer->last_disassoc_rcvd = adf_os_gettimestamp();
+		break;
+	case SIR_MAC_MGMT_DEAUTH:
+		if (peer->last_deauth_rcvd) {
+			if (adf_os_gettimestamp() -
+			    peer->last_deauth_rcvd <
+			    TLSHIM_MGMT_FRAME_DETECT_DOS_TIMER) {
+				TLSHIM_LOGD(FL("Dropping Deauth received"));
+				should_drop = TRUE;
+			}
+		}
+		peer->last_deauth_rcvd = adf_os_gettimestamp();
+		break;
+	default:
+		break;
+	}
+
+end:
+	return should_drop;
+}
+
 static int tlshim_mgmt_rx_process(void *context, u_int8_t *data,
 				       u_int32_t data_len, bool saved_beacon, u_int32_t vdev_id)
 {
@@ -717,6 +806,10 @@ static int tlshim_mgmt_rx_process(void *context, u_int8_t *data,
 				adf_nbuf_pull_head(wbuf, IEEE80211_CCMP_HEADERLEN);
 				adf_nbuf_trim_tail(wbuf, IEEE80211_CCMP_MICLEN);
 
+				/* wh is moved, restore wh with relocated
+				 * ieee80211_frame header.
+				 */
+				wh = (struct ieee80211_frame *) adf_nbuf_data(wbuf);
 				rx_pkt->pkt_meta.mpdu_hdr_ptr = adf_nbuf_data(wbuf);
 				rx_pkt->pkt_meta.mpdu_len = adf_nbuf_len(wbuf);
 				rx_pkt->pkt_meta.mpdu_data_len =
@@ -773,6 +866,11 @@ static int tlshim_mgmt_rx_process(void *context, u_int8_t *data,
 		}
 	}
 #endif /* WLAN_FEATURE_11W */
+	if (tlshim_is_pkt_drop_candidate(wma_handle, wh->i_addr2,
+					 mgt_subtype)) {
+		vos_pkt_return_packet(rx_pkt);
+		return -EINVAL;
+	}
 	return tl_shim->mgmt_rx(vos_ctx, rx_pkt);
 }
 
@@ -1193,16 +1291,10 @@ adf_nbuf_t WLANTL_SendSTA_DataFrame(void *vos_ctx, void *vdev,
 {
 	struct txrx_tl_shim_ctx *tl_shim = vos_get_context(VOS_MODULE_ID_TL,
 							   vos_ctx);
-	void *adf_ctx = vos_get_context(VOS_MODULE_ID_ADF, vos_ctx);
 	adf_nbuf_t ret, skb_list_head;
 
 	if (!tl_shim) {
 		TLSHIM_LOGE("tl_shim is NULL");
-		return skb;
-	}
-
-	if (!adf_ctx) {
-		TLSHIM_LOGE("adf_ct is NULL");
 		return skb;
 	}
 
@@ -1213,8 +1305,6 @@ adf_nbuf_t WLANTL_SendSTA_DataFrame(void *vos_ctx, void *vdev,
 
 	skb_list_head = skb;
 	while (skb) {
-		adf_nbuf_map_single(adf_ctx, skb, ADF_OS_DMA_TO_DEVICE);
-
 #ifdef QCA_PKT_PROTO_TRACE
 		adf_nbuf_trace_set_proto_type(skb, proto_type);
 #endif /* QCA_PKT_PROTO_TRACE */
@@ -1228,16 +1318,8 @@ adf_nbuf_t WLANTL_SendSTA_DataFrame(void *vos_ctx, void *vdev,
 	}
 
 	ret = tl_shim->tx(vdev, skb_list_head);
-	if (ret) {
-		skb_list_head = ret;
-		TLSHIM_LOGW("Failed to tx");
-		while (ret) {
-			adf_nbuf_unmap_single(adf_ctx, ret,
-						ADF_OS_DMA_TO_DEVICE);
-			ret = ret->next;
-		}
-		return skb_list_head;
-	}
+	if (ret)
+		return ret;
 
 	return NULL;
 }
@@ -2672,3 +2754,21 @@ uint64_t tlshim_get_fwd_to_tx_packet_count(uint8_t session_id)
 {
 	return ol_rx_get_fwd_to_tx_packet_count(session_id);
 }
+
+/*
+ * tlshim_get_ll_queue_pause_bitmap() - to obtain ll queue pause bitmap and
+ *                                      last pause timestamp
+ * @session_id: vdev id
+ * @pause_bitmap: pointer to return ll queue pause bitmap
+ * @pause_timestamp: pointer to return pause timestamp to calling func.
+ *
+ * Return: status -> A_OK - for success, A_ERROR for failure
+ *
+ */
+A_STATUS tlshim_get_ll_queue_pause_bitmap(uint8_t session_id,
+	uint8_t *pause_bitmap, adf_os_time_t *pause_timestamp)
+{
+	return ol_txrx_get_ll_queue_pause_bitmap(session_id,
+		pause_bitmap, pause_timestamp);
+}
+

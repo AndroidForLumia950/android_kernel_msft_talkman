@@ -1,0 +1,15 @@
+URGENT: freezes at boot, please fix v_U64_t vos_get_bootbased_boottime_ns(void)
+{
+       return ktime_to_ns(ktime_get_boottime());
+}
+in vos_api.c in directory drivers/staging/qcacld-2.0/CORE/VOSS/src, lines 3002 to 3005
+Original implementation was: 
+return ktime_get_boot_ns();
+
+error we are getting:
+drivers/staging/qcacld-2.0/CORE/VOSS/src/vos_api.c:3004:15: error: implicit declaration of function ‘ktime_get_boot_ns’; did you mean ‘ktime_get_boottime’? [-Werror=implicit-function-declaration]
+        return ktime_get_boot_ns();
+
+THIS IS A backport from pixel xl king kernel which also uses qca6174 for wifi and bluetooth, attempt to fix heating on Lumia950/XL Wi-Fi. (Probably needs a declaration), for King kernel's source refer to: https://github.com/King-Kernel/KingKernel-rebased 
+
+ItzzJuliann

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2015 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -347,6 +347,11 @@ ol_tx_classify(
     TX_SCHED_DEBUG_PRINT("Enter %s\n", __func__);
 
     dest_addr = ol_tx_dest_addr_find(pdev, tx_nbuf);
+    if (!dest_addr) {
+       VOS_TRACE(VOS_MODULE_ID_TXRX, VOS_TRACE_LEVEL_ERROR,
+                 FL("Invalid dest_addr");
+        return NULL;
+    }
     if ((IEEE80211_IS_MULTICAST(dest_addr))
             || (vdev->opmode == wlan_op_mode_ocb)) {
         txq = &vdev->txqs[OL_TX_VDEV_MCAST_BCAST];
@@ -371,7 +376,7 @@ ol_tx_classify(
                 return NULL; /* error */
             } else if ((peer->security[OL_TXRX_PEER_SECURITY_MULTICAST].sec_type
                               != htt_sec_type_wapi) &&
-                              (A_STATUS_OK == adf_nbuf_is_dhcp_pkt(tx_nbuf))) {
+                              adf_nbuf_is_dhcp_pkt(tx_nbuf)) {
                 /* DHCP frame to go with voice priority */
                 txq = &peer->txqs[TX_DHCP_TID];
                 tx_msdu_info->htt.info.ext_tid = TX_DHCP_TID;
@@ -497,7 +502,7 @@ ol_tx_classify(
             tid = OL_TX_NON_QOS_TID;
         } else if ((peer->security[OL_TXRX_PEER_SECURITY_UNICAST].sec_type
                           != htt_sec_type_wapi) &&
-                          (A_STATUS_OK == adf_nbuf_is_dhcp_pkt(tx_nbuf))) {
+                          adf_nbuf_is_dhcp_pkt(tx_nbuf)) {
             /* DHCP frame to go with voice priority */
             tid = TX_DHCP_TID;
         }
@@ -582,6 +587,11 @@ ol_tx_classify_mgmt(
 
     TX_SCHED_DEBUG_PRINT("Enter %s\n", __func__);
     dest_addr = ol_tx_dest_addr_find(pdev, tx_nbuf);
+    if (!dest_addr) {
+       VOS_TRACE(VOS_MODULE_ID_TXRX, VOS_TRACE_LEVEL_ERROR,
+                 FL("Invalid dest_addr");
+        return NULL;
+    }
     if (IEEE80211_IS_MULTICAST(dest_addr)) {
         /*
          * AP:  beacons are broadcast,

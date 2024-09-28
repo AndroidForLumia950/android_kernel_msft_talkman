@@ -49,6 +49,7 @@
 #ifdef FEATURE_WLAN_TDLS
 #define STA_ENTRY_TDLS_PEER         4
 #endif /* FEATURE_WLAN_TDLS */
+#define STA_ENTRY_NDI_PEER          5
 
 #define STA_ENTRY_TRANSMITTER       STA_ENTRY_SELF
 #define STA_ENTRY_RECEIVER          STA_ENTRY_OTHER
@@ -923,7 +924,8 @@ typedef struct
 #ifdef WLAN_FEATURE_11AC
 typedef struct
 {
-   tANI_U16   opMode;
+   tANI_U16  opMode;
+   tANI_U16  chanMode;
    tANI_U16  staId;
    tANI_U16  smesessionId;
    tSirMacAddr peer_mac;

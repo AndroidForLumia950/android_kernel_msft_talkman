@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -110,7 +110,6 @@
 #include "wlan_hdd_ocb.h"
 #include "wlan_hdd_tsf.h"
 #include "vos_nvitem.h"
-#include "wlan_hdd_nan_datapath.h"
 #include "wlan_hdd_oemdata.h"
 #include "wlan_hdd_request_manager.h"
 
@@ -459,7 +458,6 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #endif
 #define WE_SET_MON_MODE_CHAN 3
 #define WE_DUMP_DP_TRACE_LEVEL    4
-#define DUMP_DP_TRACE       0
 
 #define WLAN_STATS_INVALID            0
 #define WLAN_STATS_RETRY_CNT          1
@@ -812,6 +810,9 @@ void hdd_wlan_dump_stats(hdd_adapter_t *pAdapter, int value)
     {
         case WLAN_TXRX_HIST_STATS:
             wlan_hdd_display_tx_rx_histogram(hdd_ctx);
+            break;
+        case WLAN_HDD_NETIF_OPER_HISTORY:
+            wlan_hdd_display_netif_queue_history(hdd_ctx);
             break;
         default:
             WLANTL_display_datapath_stats(hdd_ctx->pvosContext, value);
@@ -1500,15 +1501,18 @@ void ccmCfgSetCallback(tHalHandle halHandle, tANI_S32 result)
 
 }
 
+/* hdd_clearRoamProfileIe() - Clear roam profile IEs
+ * @pAdapter: Adapter handle
+ *
+ * Clears roam profile information elements
+ * Returns: none
+ */
 void hdd_clearRoamProfileIe( hdd_adapter_t *pAdapter)
 {
    int i = 0;
-   hdd_wext_state_t *pWextState;
+   hdd_wext_state_t *pWextState = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
 
-   if (WLAN_HDD_NDI == pAdapter->device_mode)
-       pWextState = WLAN_HDD_GET_NDP_WEXT_STATE_PTR(pAdapter);
-   else
-       pWextState= WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
+   ENTER();
 
    if (!pWextState) {
         hddLog(LOGE, FL("ERROR: pWextState not found"));
@@ -1564,7 +1568,7 @@ void hdd_clearRoamProfileIe( hdd_adapter_t *pAdapter)
 #endif
 
    vos_mem_zero((void *)(pWextState->req_bssId), VOS_MAC_ADDR_SIZE);
-
+   EXIT();
 }
 
 void wlan_hdd_ula_done_cb(v_VOID_t *callbackContext)
@@ -3700,6 +3704,7 @@ return_cached_results:
 struct station_stats {
 	tCsrSummaryStatsInfo summary_stats;
 	tCsrGlobalClassAStatsInfo class_a_stats;
+	struct csr_per_chain_rssi_stats_info per_chain_rssi_stats;
 };
 
 /**
@@ -3716,6 +3721,7 @@ static void hdd_get_station_statistics_cb(void *stats, void *context)
 	struct station_stats *priv;
 	tCsrSummaryStatsInfo *summary_stats;
 	tCsrGlobalClassAStatsInfo *class_a_stats;
+	struct csr_per_chain_rssi_stats_info *per_chain_rssi_stats;
 
 	if (ioctl_debug) {
 		pr_info("%s: stats [%pK] context [%pK]\n",
@@ -3736,11 +3742,14 @@ static void hdd_get_station_statistics_cb(void *stats, void *context)
 
 	summary_stats = (tCsrSummaryStatsInfo *) stats;
 	class_a_stats = (tCsrGlobalClassAStatsInfo *) (summary_stats + 1);
+	per_chain_rssi_stats = (struct csr_per_chain_rssi_stats_info *)
+				(class_a_stats + 1);
 	priv = hdd_request_priv(request);
 
 	/* copy over the stats. do so as a struct copy */
 	priv->summary_stats = *summary_stats;
 	priv->class_a_stats = *class_a_stats;
+	priv->per_chain_rssi_stats = *per_chain_rssi_stats;
 
 	hdd_request_complete(request);
 	hdd_request_put(request);
@@ -3782,7 +3791,8 @@ VOS_STATUS wlan_hdd_get_station_stats(hdd_adapter_t *pAdapter)
 	hstatus = sme_GetStatistics(WLAN_HDD_GET_HAL_CTX(pAdapter),
 				     eCSR_HDD,
 				     SME_SUMMARY_STATS |
-				     SME_GLOBAL_CLASSA_STATS,
+				     SME_GLOBAL_CLASSA_STATS |
+				     SME_PER_CHAIN_RSSI_STATS,
 				     hdd_get_station_statistics_cb,
 				     0, /* not periodic */
 				     FALSE, /* non-cached results */
@@ -3804,6 +3814,8 @@ VOS_STATUS wlan_hdd_get_station_stats(hdd_adapter_t *pAdapter)
 			priv = hdd_request_priv(request);
 			pAdapter->hdd_stats.summary_stat = priv->summary_stats;
 			pAdapter->hdd_stats.ClassA_stat = priv->class_a_stats;
+			pAdapter->hdd_stats.per_chain_rssi_stats =
+				priv->per_chain_rssi_stats;
 		}
 	}
 
@@ -4227,48 +4239,12 @@ static int iw_get_nick(struct net_device *dev,
  * __get_wireless_stats() - get wireless stats
  * @dev: pointer to net_device
  *
- * Return: pointer to iw_statistics on success, NULL otherwise
+ * Return: %NULL
  */
 static struct iw_statistics *__get_wireless_stats(struct net_device *dev)
 {
-	hdd_adapter_t *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
-	hdd_context_t *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
-	hdd_wext_state_t  *wext_state =  WLAN_HDD_GET_WEXT_STATE_PTR(adapter);
-	hdd_station_ctx_t *hdd_sta_ctx;
-	v_S7_t snr = 0, rssi = 0;
-	int status;
-
 	ENTER();
-
-	status = wlan_hdd_validate_context(hdd_ctx);
-	if (0 != status)
-		return NULL;
-
-	hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
-	if (eConnectionState_Associated != hdd_sta_ctx->conn_info.connState) {
-		hddLog(VOS_TRACE_LEVEL_INFO,
-			FL("not in associated state: %d"),
-				hdd_sta_ctx->conn_info.connState);
-		return NULL;
-	}
-
-	wlan_hdd_get_station_stats(adapter);
-	wlan_hdd_get_snr(adapter, &snr);
-	wlan_hdd_get_rssi(adapter, &rssi);
-
-	vos_mem_zero(&wext_state->iw_stats, sizeof(wext_state->iw_stats));
-	wext_state->iw_stats.status = 0;
-	wext_state->iw_stats.qual.qual = snr;
-	wext_state->iw_stats.qual.level = rssi;
-	wext_state->iw_stats.qual.noise = rssi - snr;
-	wext_state->iw_stats.discard.code = 0;
-	wext_state->iw_stats.discard.retries = 0;
-	wext_state->iw_stats.miss.beacon = 0;
-	wext_state->iw_stats.qual.updated =
-					IW_QUAL_ALL_UPDATED | IW_QUAL_DBM;
-
-	EXIT();
-	return &(wext_state->iw_stats);
+	return NULL;
 }
 
 /**
@@ -4288,6 +4264,7 @@ static struct iw_statistics *get_wireless_stats(struct net_device *dev)
 
 	return iw_stats;
 }
+
 
 /**
  * __iw_set_encode() - SIOCSIWENCODE ioctl handler
@@ -5046,10 +5023,9 @@ static int __iw_set_mlme(struct net_device *dev, struct iw_request_info *info,
                 (WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter))->authKeyMgmt = 0;
 
                 hddLog(LOG1, FL("Disabling queues"));
-                netif_tx_disable(dev);
-                netif_carrier_off(dev);
-                pAdapter->hdd_stats.hddTxRxStats.netq_disable_cnt++;
-                pAdapter->hdd_stats.hddTxRxStats.netq_state_off = TRUE;
+                wlan_hdd_netif_queue_control(pAdapter,
+                    WLAN_NETIF_TX_DISABLE_N_CARRIER,
+                    WLAN_CONTROL_PATH);
 
             }
             else
@@ -6478,6 +6454,9 @@ static int __iw_setint_getnone(struct net_device *dev,
                  break;
              case WLAN_TXRX_HIST_STATS:
                  wlan_hdd_clear_tx_rx_histogram(pHddCtx);
+                 break;
+             case WLAN_HDD_NETIF_OPER_HISTORY:
+                 wlan_hdd_clear_netif_queue_history(hdd_ctx);
                  break;
              default:
                  WLANTL_clear_datapath_stats(hdd_ctx->pvosContext, set_value);
@@ -8522,7 +8501,6 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
                     hddLog(LOGE, FL("Invalid MODULE ID %d"), apps_args[0]);
                     return -EINVAL;
                 }
-
                 if ((apps_args[1] > (WMA_MAX_NUM_ARGS)) ||
                     (apps_args[1] < 0)) {
                     hddLog(LOGE, FL("Too Many/Few args %d"), apps_args[1]);
@@ -9689,55 +9667,59 @@ int wlan_hdd_setIPv6Filter(hdd_context_t *pHddCtx, tANI_U8 filterType,
     return 0;
 }
 
+/**
+ * wlan_hdd_set_mc_addr_list() - Set multicast address list
+ * @pAdapter: Adapter context
+ * @set: flag to notify set/clear action on the multicast addr
+ *
+ * Returns: None
+ */
 void wlan_hdd_set_mc_addr_list(hdd_adapter_t *pAdapter, v_U8_t set)
 {
     v_U8_t i;
     tpSirRcvFltMcAddrList pMulticastAddrs = NULL;
-    tHalHandle hHal = NULL;
+    tHalHandle hHal;
     hdd_context_t* pHddCtx = (hdd_context_t*)pAdapter->pHddCtx;
+    hdd_station_ctx_t *sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
 
-    if (NULL == pHddCtx)
-    {
-        hddLog(VOS_TRACE_LEVEL_ERROR, FL("HDD CTX is NULL"));
+    ENTER();
+
+    if (wlan_hdd_validate_context(pHddCtx))
         return;
-    }
 
     hHal = pHddCtx->hHal;
 
-    if (NULL == hHal)
-    {
+    if (NULL == hHal) {
         hddLog(VOS_TRACE_LEVEL_ERROR, FL("HAL Handle is NULL"));
         return;
     }
 
-    /* Check if INI is enabled or not, other wise just return
-     */
-    if (pHddCtx->cfg_ini->fEnableMCAddrList)
-    {
+    if (!sta_ctx) {
+        hddLog(LOGE, "sta_ctx is NULL");
+        return;
+    }
+
+    if (pHddCtx->cfg_ini->fEnableMCAddrList) {
         pMulticastAddrs = vos_mem_malloc(sizeof(tSirRcvFltMcAddrList));
-        if (NULL == pMulticastAddrs)
-        {
+        if (NULL == pMulticastAddrs) {
             hddLog(VOS_TRACE_LEVEL_ERROR, FL("Could not allocate Memory"));
             return;
         }
         vos_mem_zero(pMulticastAddrs, sizeof(tSirRcvFltMcAddrList));
         pMulticastAddrs->action = set;
 
-        if (set)
-        {
-            /* Following pre-conditions should be satisfied before we
-             * configure the MC address list.
-             */
-            if (((pAdapter->device_mode == WLAN_HDD_INFRA_STATION) ||
-               (pAdapter->device_mode == WLAN_HDD_P2P_CLIENT))
-               && pAdapter->mc_addr_list.mc_cnt
-               && (eConnectionState_Associated ==
-               (WLAN_HDD_GET_STATION_CTX_PTR(pAdapter))->conn_info.connState))
-            {
+        if (set) {
+            if (pAdapter->mc_addr_list.mc_cnt &&
+                     (((pAdapter->device_mode == WLAN_HDD_INFRA_STATION ||
+                       pAdapter->device_mode == WLAN_HDD_P2P_CLIENT) &&
+                       hdd_connIsConnected(sta_ctx)) ||
+                     (WLAN_HDD_IS_NDI(pAdapter) &&
+                       WLAN_HDD_IS_NDI_CONNECTED(pAdapter)))) {
+
                 pMulticastAddrs->ulMulticastAddrCnt =
                                  pAdapter->mc_addr_list.mc_cnt;
-                for (i = 0; i < pAdapter->mc_addr_list.mc_cnt; i++)
-                {
+
+                for (i = 0; i < pAdapter->mc_addr_list.mc_cnt; i++) {
                     memcpy(pMulticastAddrs->multicastAddr[i],
                            &pAdapter->mc_addr_list.addr[i * ETH_ALEN],
                            ETH_ALEN);
@@ -9750,14 +9732,15 @@ void wlan_hdd_set_mc_addr_list(hdd_adapter_t *pAdapter, v_U8_t set)
                 /* Set multicast filter */
                 sme_8023MulticastList(hHal, pAdapter->sessionId,
                                       pMulticastAddrs);
+            } else {
+                hddLog(VOS_TRACE_LEVEL_INFO,
+                       FL("MC address list not sent to FW, cnt: %d"),
+                        pAdapter->mc_addr_list.mc_cnt);
             }
-        }
-        else
-        {
+        } else {
             /* Need to clear only if it was previously configured
              */
-            if (pAdapter->mc_addr_list.isFilterApplied)
-            {
+            if (pAdapter->mc_addr_list.isFilterApplied) {
                 pMulticastAddrs->ulMulticastAddrCnt =
                                  pAdapter->mc_addr_list.mc_cnt;
                 i = 0;
@@ -9784,12 +9767,12 @@ void wlan_hdd_set_mc_addr_list(hdd_adapter_t *pAdapter, v_U8_t set)
 
         pAdapter->mc_addr_list.isFilterApplied = set ? TRUE : FALSE;
         vos_mem_free(pMulticastAddrs);
-    }
-    else
-    {
+    } else {
         hddLog(VOS_TRACE_LEVEL_INFO,
                 FL("gMCAddrListEnable is not enabled in INI"));
     }
+
+    EXIT();
     return;
 }
 
@@ -10813,6 +10796,10 @@ static int __iw_set_two_ints_getnone(struct net_device *dev,
                        value[1], value[2]);
         if (value[1] == DUMP_DP_TRACE)
             adf_dp_trace_dump_all(value[2]);
+        else if (value[1] == ENABLE_DP_TRACE_LIVE_MODE)
+            adf_dp_trace_enable_live_mode();
+        else if (value[1] == CLEAR_DP_TRACE_BUFFER)
+            adf_dp_trace_clear_buffer();
         else
             hddLog(LOGE, "unexpected value for dump_dp_trace");
         break;
@@ -12015,13 +12002,13 @@ static const struct iw_priv_args we_private_args[] = {
     {   WE_SET_MON_MODE_CHAN,
         IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2,
         0, "setMonChan" },
-    {
-	WLAN_PRIV_SET_FTIES,
-	IW_PRIV_TYPE_CHAR | MAX_FTIE_SIZE,
-	0, "set_ft_ies" },
     {   WE_DUMP_DP_TRACE_LEVEL,
         IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2,
         0, "dump_dp_trace"},
+    {
+        WLAN_PRIV_SET_FTIES,
+        IW_PRIV_TYPE_CHAR | MAX_FTIE_SIZE,
+        0, "set_ft_ies"},
 };
 
 
@@ -12211,36 +12198,34 @@ int hdd_validate_mcc_config(hdd_adapter_t *pAdapter, v_UINT_t staId, v_UINT_t ar
     return 0;
 }
 
+/* hdd_set_wext() - configures bss parameters
+ * @pAdapter: handle to adapter context
+ *
+ * Returns: none
+ */
 int hdd_set_wext(hdd_adapter_t *pAdapter)
 {
-    hdd_wext_state_t *pwextBuf;
-    hdd_station_ctx_t *pHddStaCtx;
-    //struct nan_datapath_ctx *nan_ctx;
-    tCsrSSIDInfo *ssid_list;
-    tCsrBssid *bssid;
+    hdd_wext_state_t *pwextBuf = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
+    hdd_station_ctx_t *pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
 
-    if (WLAN_HDD_NDI == pAdapter->device_mode) {
-       pwextBuf = WLAN_HDD_GET_NDP_WEXT_STATE_PTR(pAdapter);
-       //nan_ctx = WLAN_HDD_GET_NDP_CTX_PTR(pAdapter);
-       ssid_list = WLAN_HDD_NDP_GET_SSID(pAdapter);
-       bssid = WLAN_HDD_NDP_GET_BSSID(pAdapter);
-    } else {
-       pwextBuf = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
-       pHddStaCtx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
-       ssid_list = &pHddStaCtx->conn_info.SSID;
-       bssid = &pHddStaCtx->conn_info.bssId;
-    }
+    ENTER();
 
     if (!pwextBuf) {
-        hddLog(LOGE, FL("ERROR: pwextBuf not found"));
+        hddLog(LOGE, FL("ERROR: pwextBuf is NULL"));
         return VOS_STATUS_E_FAILURE;
     }
+
+    if (!pHddStaCtx) {
+        hddLog(LOGE, FL("ERROR: pHddStaCtx is NULL"));
+        return VOS_STATUS_E_FAILURE;
+    }
+
     /* Now configure the roaming profile links. To SSID and bssid */
     pwextBuf->roamProfile.SSIDs.numOfSSIDs = 0;
-    pwextBuf->roamProfile.SSIDs.SSIDList = ssid_list;
+    pwextBuf->roamProfile.SSIDs.SSIDList = &pHddStaCtx->conn_info.SSID;
 
     pwextBuf->roamProfile.BSSIDs.numOfBSSIDs = 0;
-    pwextBuf->roamProfile.BSSIDs.bssid = bssid;
+    pwextBuf->roamProfile.BSSIDs.bssid = &pHddStaCtx->conn_info.bssId;
 
     /*Set the numOfChannels to zero to scan all the channels*/
     pwextBuf->roamProfile.ChannelInfo.numOfChannels = 0;
@@ -12267,9 +12252,9 @@ int hdd_set_wext(hdd_adapter_t *pAdapter)
 
     hdd_clearRoamProfileIe(pAdapter);
 
+    EXIT();
     return VOS_STATUS_SUCCESS;
-
-    }
+}
 
 /**
  * hdd_register_wext() - register wext context
@@ -12282,20 +12267,16 @@ int hdd_set_wext(hdd_adapter_t *pAdapter)
 int hdd_register_wext(struct net_device *dev)
 {
     hdd_adapter_t *pAdapter = WLAN_HDD_GET_PRIV_PTR(dev);
-    hdd_wext_state_t *pwextBuf;
+    hdd_wext_state_t *pwextBuf = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
     VOS_STATUS status;
 
     ENTER();
 
-    if (WLAN_HDD_NDI == pAdapter->device_mode)
-        pwextBuf = WLAN_HDD_GET_NDP_WEXT_STATE_PTR(pAdapter);
-    else
-        pwextBuf = WLAN_HDD_GET_WEXT_STATE_PTR(pAdapter);
-
     if (!pwextBuf) {
-        hddLog(LOGE, FL("ERROR: pwextBuf not found"));
+        hddLog(LOGE, FL("ERROR: pwextBuf is NULL"));
         return eHAL_STATUS_FAILURE;
     }
+
     /* Zero the memory. This zeros the profile structure */
     memset(pwextBuf, 0, sizeof(hdd_wext_state_t));
 

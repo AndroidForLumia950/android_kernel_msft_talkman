@@ -322,14 +322,6 @@ static int wlan_queue_logmsg_for_app(void)
 		gwlan_logging.pcur_node =
 			(struct log_msg *)(gwlan_logging.filled_list.next);
 		++gwlan_logging.drop_count;
-		/* print every 64th drop count */
-		if (vos_is_multicast_logging() &&
-				(!(gwlan_logging.drop_count % 0x40))) {
-			pr_info("%s: drop_count = %u index = %d filled_length = %d\n",
-				__func__, gwlan_logging.drop_count,
-				gwlan_logging.pcur_node->index,
-				gwlan_logging.pcur_node->filled_length);
-		}
 		list_del_init(gwlan_logging.filled_list.next);
 		ret = 1;
 	}
@@ -413,11 +405,9 @@ int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length)
 		 * Continue and copy logs to the available length and
 		 * discard the rest.
 		 */
-		if (MAX_LOGMSG_LENGTH < (sizeof(tAniNlHdr) + total_log_len)) {
-			VOS_ASSERT(0);
+		if (MAX_LOGMSG_LENGTH < (sizeof(tAniNlHdr) + total_log_len))
 			total_log_len = MAX_LOGMSG_LENGTH -
 						sizeof(tAniNlHdr) - 2;
-		}
 
 		memcpy(&ptr[*pfilled_length], tbuf, tlen);
 		memcpy(&ptr[*pfilled_length + tlen], to_be_sent,
@@ -441,7 +431,7 @@ int wlan_log_to_user(VOS_TRACE_LEVEL log_level, char *to_be_sent, int length)
 		if (gwlan_logging.log_fe_to_console
 			&& ((VOS_TRACE_LEVEL_FATAL == log_level)
 			|| (VOS_TRACE_LEVEL_ERROR == log_level))) {
-			pr_info("%s\n", to_be_sent);
+			pr_info("%s %s\n", tbuf, to_be_sent);
 		}
 	}
 	return 0;
@@ -467,9 +457,11 @@ static int pkt_stats_fill_headers(struct sk_buff *skb)
 	vos_pktlog.version = VERSION_LOG_WLAN_PKT_LOG_INFO_C;
 	vos_pktlog.buf_len = skb->len;
 	vos_pktlog.seq_no = gwlan_logging.pkt_stats_msg_idx++;
+#ifdef FEATURE_WLAN_DIAG_SUPPORT
 	vos_log_set_code(&vos_pktlog, LOG_WLAN_PKT_LOG_INFO_C);
 	vos_log_set_length(&vos_pktlog.log_hdr, skb->len +
 				vos_pkt_size);
+#endif
 
 	if (unlikely(skb_headroom(skb) < vos_pkt_size)) {
 		pr_err("VPKT [%d]: Insufficient headroom, head[%p], data[%p], req[%zu]",
@@ -594,7 +586,6 @@ int pktlog_send_per_pkt_stats_to_user(void)
 			free_old_skb = true;
 			goto err;
 		}
-
 		ret = nl_srv_bcast_diag(pstats_msg->skb);
 		if (ret < 0) {
 			pr_info("%s: Send Failed %d drop_count = %u\n",
@@ -794,7 +785,6 @@ static int wlan_logging_thread(void *Arg)
 		}
 
 		if (gwlan_logging.exit) {
-			pr_err("%s: Exiting the thread\n", __func__);
 			break;
 		}
 
@@ -848,7 +838,6 @@ static int wlan_logging_thread(void *Arg)
 		}
 	}
 
-	pr_info("%s: Terminating\n", __func__);
 
 	complete_and_exit(&gwlan_logging.shutdown_comp, 0);
 
@@ -969,8 +958,6 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf)
 	int i, j, pkt_stats_size;
 	unsigned long irq_flag;
 
-	pr_info("%s: Initalizing FEConsoleLog = %d NumBuff = %d\n",
-			__func__, log_fe_to_console, num_buf);
 
 	gapp_pid = INVALID_PID;
 
@@ -1057,8 +1044,6 @@ int wlan_logging_sock_activate_svc(int log_fe_to_console, int num_buf)
 	gwlan_logging.is_flush_complete = false;
 
 	register_logging_sock_handler();
-
-	pr_info("%s: Activated wlan_logging svc\n", __func__);
 	return 0;
 
 err3:
@@ -1121,7 +1106,6 @@ int wlan_logging_sock_deactivate_svc(void)
 
 	vfree(gpkt_stats_buffers);
 	gpkt_stats_buffers = NULL;
-	pr_info("%s: Deactivate wlan_logging svc\n", __func__);
 
 	return 0;
 }

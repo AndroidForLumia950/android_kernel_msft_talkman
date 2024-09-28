@@ -221,7 +221,7 @@ rrmSetMaxTxPowerRsp ( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ )
    {
       for (i =0;i < pMac->lim.maxBssId;i++)
       {
-         if ( (pMac->lim.gpSession[i].valid == TRUE ))
+         if (pMac->lim.gpSession[i].valid == TRUE )
          {
             pSessionEntry = &pMac->lim.gpSession[i];
             rrmCacheMgmtTxPower ( pMac, pMaxTxParams->power, pSessionEntry );
@@ -1242,8 +1242,8 @@ rrmInitialize(tpAniSirGlobal pMac)
    pRRMCaps->fine_time_meas_rpt = 1;
    pRRMCaps->lci_capability = 1;
 
-   pRRMCaps->operatingChanMax = 3;
-   pRRMCaps->nonOperatingChanMax = 3;
+   pRRMCaps->operatingChanMax = 4;
+   pRRMCaps->nonOperatingChanMax = 4;
 
    return eSIR_SUCCESS;
 }
