@@ -242,16 +242,15 @@ int adreno_perfcounter_start(struct adreno_device *adreno_dev)
 
 	if (NULL == counters)
 		return 0;
+
 	/* group id iter */
 	for (i = 0; i < counters->group_count; i++) {
 		group = &(counters->groups[i]);
 
 		/* countable iter */
 		for (j = 0; j < group->reg_count; j++) {
-			if (group->regs[j].countable ==
-					KGSL_PERFCOUNTER_NOT_USED ||
-					group->regs[j].countable ==
-					KGSL_PERFCOUNTER_BROKEN)
+			if (group->regs[j].countable == KGSL_PERFCOUNTER_NOT_USED ||
+			    group->regs[j].countable == KGSL_PERFCOUNTER_BROKEN)
 				continue;
 
 			/*
@@ -259,16 +258,18 @@ int adreno_perfcounter_start(struct adreno_device *adreno_dev)
 			 * enable function, but since this function is called
 			 * during start we already know the GPU is idle
 			 */
-			if (gpudev->perfcounter_enable)
-				ret = gpudev->perfcounter_enable(adreno_dev, i,
-					j, group->regs[j].countable);
+			if (gpudev->perfcounter_enable) {
+				ret = gpudev->perfcounter_enable(adreno_dev, i, j, group->regs[j].countable);
 				if (ret)
 					goto done;
+			}
 		}
 	}
+
 done:
 	return ret;
 }
+
 
 /**
  * adreno_perfcounter_read_group() - Determine which countables are in counters
