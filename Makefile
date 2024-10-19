@@ -377,12 +377,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-delete-null-pointer-checks \
 		   -std=gnu89 \
 		   -Wno-error=maybe-uninitialized \
-		   -Wno-error=misleading-indentation \
-		   -Wno-error=unused-const-variable \
-		   -Wno-error=switch-unreachable \
-		   -Wno-error=bool-compare \
-		   -Wno-error=format-truncation= \
-		   -Wno-error=array-bounds \
 		   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53
 
 KBUILD_AFLAGS_KERNEL :=
