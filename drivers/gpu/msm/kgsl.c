@@ -1588,9 +1588,9 @@ void kgsl_dump_syncpoints(struct kgsl_device *device,
 		}
 		case KGSL_CMD_SYNCPOINT_TYPE_FENCE:
 			if (event->handle)
-				dev_err(device->dev, "  fence: [%p] %s\n",
-					event->handle->fence,
-					event->handle->name);
+				//dev_err(device->dev, "  fence: [%p] %s\n",
+					//event->handle->fence,
+					//event->handle->name);
 			else
 				dev_err(device->dev, "  fence: invalid\n");
 			break;
@@ -1852,8 +1852,8 @@ static void kgsl_cmdbatch_sync_fence_func(void *priv)
 {
 	struct kgsl_cmdbatch_sync_event *event = priv;
 
-	trace_syncpoint_fence_expire(event->cmdbatch,
-		event->handle ? event->handle->name : "unknown");
+	//trace_syncpoint_fence_expire(event->cmdbatch,
+		//event->handle ? event->handle->name : "unknown");
 
 	kgsl_cmdbatch_sync_expire(event->device, event);
 	/* Put events that have signaled */
@@ -1939,7 +1939,7 @@ static int kgsl_cmdbatch_add_sync_fence(struct kgsl_device *device,
 		return ret;
 	}
 
-	trace_syncpoint_fence(cmdbatch, event->handle->name);
+	//trace_syncpoint_fence(cmdbatch, event->handle->name);
 	spin_unlock_irqrestore(&cmdbatch->lock, flags);
 
 	/*
