@@ -384,6 +384,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-error=format-truncation= \
 		   -Wno-error=array-bounds \
 		   -Wno-error=unused-variable \
+		   -Wno-error=unused-function \
 		   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53
 
 KBUILD_AFLAGS_KERNEL :=
