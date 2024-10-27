@@ -1591,6 +1591,7 @@ void kgsl_dump_syncpoints(struct kgsl_device *device,
 				//dev_err(device->dev, "  fence: [%p] %s\n",
 					//event->handle->fence,
 					//event->handle->name);
+					return 0;
 			else
 				dev_err(device->dev, "  fence: invalid\n");
 			break;
