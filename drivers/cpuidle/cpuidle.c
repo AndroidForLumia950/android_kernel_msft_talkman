@@ -532,7 +532,7 @@ static void cpuidle_set_idle_cpu(unsigned int cpu)
 
 static void cpuidle_clear_idle_cpu(unsigned int cpu)
 {
-	atomic_andnot(BIT(cpu), &idle_cpu_mask);
+    atomic_and(~BIT(cpu), &idle_cpu_mask);
 }
 
 /*
