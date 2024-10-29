@@ -33,12 +33,6 @@ static int initialized __read_mostly;
 static void cpuidle_set_idle_cpu(unsigned int cpu);
 static void cpuidle_clear_idle_cpu(unsigned int cpu);
 
-
-static inline void atomic_and(unsigned long mask, atomic_t *addr)
-{
-    atomic_set(addr, atomic_read(addr) & mask);
-}
-
 int cpuidle_disabled(void)
 {
 	return off;
