@@ -59,12 +59,17 @@ jobs:
           cd ./${ANYKERNEL3_DIR}
           zip -r9 $FINAL_ZIP ./*
 
+      - name: Create tag for release
+        run: |
+          git tag -a "Perf-kernel-$(date -u +"%Y%m%d-%H%M")" -m "Release for kernel build"
+          git push origin "Perf-kernel-$(date -u +"%Y%m%d-%H%M")"  # Push the tag
+
       - name: Release under current commit
         run: |
           export "CHANGELOG_FILE=$(mktemp --suffix=.md)"
           echo "CHANGELOG_FILE=${CHANGELOG_FILE}" >> $GITHUB_ENV
           echo "Release for commit ${RELEASE_VERSION}" > "${CHANGELOG_FILE}"
-          gh release create "${RELEASE_VERSION}" -F "${CHANGELOG_FILE}" ./${ANYKERNEL3_DIR}/$FINAL_ZIP
+          gh release create "Perf-kernel-$(date -u +"%Y%m%d-%H%M")" -F "${CHANGELOG_FILE}" ./${ANYKERNEL3_DIR}/$FINAL_ZIP
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
