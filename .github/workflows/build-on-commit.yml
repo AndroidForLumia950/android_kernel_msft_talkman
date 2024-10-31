@@ -58,7 +58,12 @@ jobs:
         run: |
           cd ./${ANYKERNEL3_DIR}
           zip -r9 $FINAL_ZIP ./*
-
+          
+      - name: Set Git config
+        run: |
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+          
       - name: Create tag for release
         run: |
           git tag -a "Perf-kernel-$(date -u +"%Y%m%d-%H%M")" -m "Release for kernel build"
