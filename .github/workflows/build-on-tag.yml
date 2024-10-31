@@ -3,7 +3,7 @@ name: Release build
 on:
   push:
     branches:
-      - main  # Change to your branch name
+      - aarch64-linux-gnu-gcc8.2los18.1perf  # Change to your branch name
 
 env:
   CROSS_COMPILE_PREFIX: /gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu/bin/aarch64-linux-gnu-
@@ -27,9 +27,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu
-          key: ${{ runner.os }}-gcc8.2-${{ github.sha }}
+          key: ${{ runner.os }}-gcc8.2-${{ hashFiles('**/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz') }}
           restore-keys: |
-              ${{ runner.os }}-gcc8.2-
+            ${{ runner.os }}-gcc8.2-
 
       - name: Get toolchain
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
