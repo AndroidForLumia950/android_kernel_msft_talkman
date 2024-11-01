@@ -4773,8 +4773,9 @@ int qce_ablk_cipher_req(void *handle, struct qce_req *c_req)
 							SPS_IOVEC_FLAG_INT);
 	}
 	rc = _qce_sps_transfer(pce_dev);
-	if (rc)
-		goto bad;
+    if (rc) {
+    goto bad;
+    }
 		return 0;
 bad:
 	if (areq->src != areq->dst) {
@@ -4847,8 +4848,9 @@ int qce_process_sha_req(void *handle, struct qce_sha_req *sreq)
 		goto bad;
 	_qce_set_flag(&pce_dev->ce_sps.out_transfer, SPS_IOVEC_FLAG_INT);
 	rc = _qce_sps_transfer(pce_dev);
-	if (rc)
-		goto bad;
+    if (rc) {
+    goto bad;
+    }
 		return 0;
 bad:
 	if (pce_dev->src_nents) {
