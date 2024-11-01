@@ -1129,8 +1129,9 @@ int smd_pkt_open(struct inode *inode, struct file *file)
 			if (r == 0)
 				r = -ETIMEDOUT;
 			if (r < 0) {
-				pr_err_ratelimited("%s: wait on smd_pkt_dev id:%d allocation failed rc:%d\n",
-					__func__, smd_pkt_devp->i, r);
+				//Disabled, why? Check important-bugs repo: modem.txt
+				//pr_err_ratelimited("%s: wait on smd_pkt_dev id:%d allocation failed rc:%d\n",
+					//__func__, smd_pkt_devp->i, r);
 				goto release_pil;
 			}
 		}
@@ -1141,8 +1142,9 @@ int smd_pkt_open(struct inode *inode, struct file *file)
 					   smd_pkt_devp,
 					   ch_notify);
 		if (r < 0) {
-			pr_err_ratelimited("%s: %s open failed %d\n", __func__,
-			       smd_pkt_devp->ch_name, r);
+			//Disabled, why? Check important-bugs repo: modem.txt
+			//pr_err_ratelimited("%s: %s open failed %d\n", __func__,
+			      //smd_pkt_devp->ch_name, r);
 			goto release_pil;
 		}
 
