@@ -1,0 +1,24 @@
+name: Create toolchain cache
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache toolchain
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ./gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu
+          key: ${{ runner.os }}-gcc8.2-${{ github.sha }}
+          restore-keys: |
+              ${{ runner.os }}-gcc8.2-
+
+      - name: Get toolchain
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: wget https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
+
+      - name: Unpack toolchain
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: tar xf gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz

@@ -1,0 +1,80 @@
+name: Release build
+
+on:
+  push:
+    branches:
+      - aarch64-linux-gnu-gcc8.2los18.1perf  # Change to your branch name
+
+env:
+  CROSS_COMPILE_PREFIX: /gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu/bin/aarch64-linux-gnu-
+  IMAGE: /arch/arm64/boot/Image.gz-dtb
+  ANYKERNEL3_DIR: /anykernel
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.sha }}  # Use commit SHA as the version
+      RELEASE_VERSION: ${{ github.sha }}  # Same for release version
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache toolchain
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ./gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu
+          key: ${{ runner.os }}-gcc8.2-${{ hashFiles('**/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz') }}
+          restore-keys: |
+            ${{ runner.os }}-gcc8.2-
+            
+      - name: Get toolchain
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: wget https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
+
+      - name: Unpack toolchain
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: tar xf gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
+          
+      - name: Get current path
+        run: echo "DIR=$(pwd)" >> $GITHUB_ENV
+          
+      - name: Build defconfig
+        run: make ARCH=arm64 lineageos_bullhead_defconfig
+
+      - name: Build kernel
+        run: make ARCH=arm64 CROSS_COMPILE=$DIR${CROSS_COMPILE_PREFIX} -j$(nproc)
+
+      - name: Copy kernel to release dir
+        run: cp $DIR${IMAGE} $DIR${ANYKERNEL3_DIR}
+
+      - name: Make name for zip
+        run: echo "FINAL_ZIP=Perf-kernel-$(date -u +"%Y%m%d-%H%M").zip" >> $GITHUB_ENV
+        
+      - name: Zip release
+        run: |
+          cd ./${ANYKERNEL3_DIR}
+          zip -r9 $FINAL_ZIP ./*
+          
+      - name: Set Git config
+        run: |
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+          
+      - name: Create tag for release
+        run: |
+          git tag -a "Perf-kernel-$(date -u +"%Y%m%d-%H%M")" -m "Release for kernel build"
+          git push origin "Perf-kernel-$(date -u +"%Y%m%d-%H%M")"  # Push the tag
+
+      - name: Release under current commit
+        run: |
+          export "CHANGELOG_FILE=$(mktemp --suffix=.md)"
+          echo "CHANGELOG_FILE=${CHANGELOG_FILE}" >> $GITHUB_ENV
+          echo "Release for commit ${RELEASE_VERSION}" > "${CHANGELOG_FILE}"
+          gh release create "Perf-kernel-$(date -u +"%Y%m%d-%H%M")" -F "${CHANGELOG_FILE}" ./${ANYKERNEL3_DIR}/$FINAL_ZIP
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
