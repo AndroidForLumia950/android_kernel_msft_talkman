@@ -28,7 +28,6 @@
 #include "common/reserved-memory.dtsi"
 #include "common/i2c.dtsi"
 #include "common/sensors.dtsi"
-#include "msm8992-amp-ti-tas2552.dtsi"
 
 / {
 	aliases {
