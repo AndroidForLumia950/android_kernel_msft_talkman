@@ -12,32 +12,42 @@
 
 &soc {
 	i2c_5: i2c@f9967000 {
-		ti-tas2552_40@40 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,i2c-msm-v2";
+
+		// TAS2552 at address 0x40
+		tas2552_left: tas2552@40 {
 			compatible = "ti,tas2552";
-			status = "disable";
-			reg = <0x40>;
+			status = "okay";
+			reg = <0x40>;  // Ensure this matches the TAS2552's I2C address
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&tas2552_active>;
 			pinctrl-1 = <&tas2552_sleep>;
-			ti,enable-gpio = <&msm_gpio 0 0>;
+			ti,enable-gpio = <&msm_gpio 0 GPIO_ACTIVE_HIGH>; // Check GPIO and polarity
 			ti,label = "amplifier_l";
 			ti,gain = <0x1f>;
 			ti,idle-timeout-ms = <20>;
 			ti,max-runtime-ms = <15000>;
+			interrupts = <0x89>;  // Update based on the ACPI info
+			interrupt-parent = <&msm_gpio>;
 		};
 
-		ti-tas2552_41@41 {
+		// TAS2552 at address 0x41 (if applicable)
+		tas2552_right: tas2552@41 {
 			compatible = "ti,tas2552";
-			status = "disable";
-			reg = <0x41>;
+			status = "okay";
+			reg = <0x41>;  // Ensure this matches the TAS2552's I2C address
 			pinctrl-names = "default", "sleep";
 			pinctrl-0 = <&tas2552_active>;
 			pinctrl-1 = <&tas2552_sleep>;
-			ti,enable-gpio = <&msm_gpio 0 0>;
-			ti,label = "amplifier_l";
+			ti,enable-gpio = <&msm_gpio 1 GPIO_ACTIVE_HIGH>; // Verify this enable GPIO if it’s different from the left
+			ti,label = "amplifier_r";
 			ti,gain = <0x1f>;
 			ti,idle-timeout-ms = <20>;
 			ti,max-runtime-ms = <15000>;
+			interrupts = <0x89>;  // Update based on the ACPI info
+			interrupt-parent = <&msm_gpio>;
 		};
 	};
 };
