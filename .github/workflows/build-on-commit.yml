@@ -20,6 +20,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
+          ref: aarch64-linux-gnu-gcc8.2los18.1perf
           fetch-depth: 0
 
       - name: Cache toolchain
