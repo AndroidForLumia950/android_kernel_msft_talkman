@@ -12,6 +12,7 @@
  
 &soc {
 	sound {
+		compatible = "qcom,msm8994-asoc-snd";
 		qcom,model = "msm8994-tomtom-mtp-snd-card";
 
 		qcom,audio-routing =
