@@ -20,6 +20,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
+          ref: experimental-tas2552 #Change this accordingly, depending on which branch you are building (speeds up the build by a lot)
           fetch-depth: 0
 
       - name: Cache toolchain
