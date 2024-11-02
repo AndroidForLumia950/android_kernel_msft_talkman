@@ -75,6 +75,10 @@ jobs:
           export "CHANGELOG_FILE=$(mktemp --suffix=.md)"
           echo "CHANGELOG_FILE=${CHANGELOG_FILE}" >> $GITHUB_ENV
           echo "Release for commit ${RELEASE_VERSION}" > "${CHANGELOG_FILE}"
+          echo "### Changes" >> "${CHANGELOG_FILE}"
+          git log --oneline --abbrev-commit ${{ github.event.before }}..${{ github.sha }} >> "${CHANGELOG_FILE}"
+          echo "### Branch" >> "${CHANGELOG_FILE}"
+          echo "${{ github.ref }}" >> "${CHANGELOG_FILE}"
           gh release create "Perf-kernel-$(date -u +"%Y%m%d-%H%M")" -F "${CHANGELOG_FILE}" ./${ANYKERNEL3_DIR}/$FINAL_ZIP
         shell: bash
         env:
