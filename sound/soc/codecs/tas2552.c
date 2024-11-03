@@ -121,9 +121,18 @@ static int tas2552_probe(struct snd_soc_codec *codec)
 {
 	struct tas2552_priv *tas2552;
 	int i, ret;
+	struct device *dev;
+	struct tas2552_data *data;
+	struct tas2552_platform_data *pdata = client->dev.platform_data;
+	struct device_node *np = client->dev.of_node;
+	dev_dbg(&client->dev, "%s:\n", __func__);
+
+	if (nClients >= 2) return -1;
+
+	dev = &client->dev;
 
 	dev_err(codec->dev, "%s: enter\n", __func__);
-	pr_err("TAS2552 entry");
+	pr_dbg("TAS2552 entry");
 	tas2552 = kzalloc(sizeof(struct tas2552_priv), GFP_KERNEL);
 	if (tas2552 == NULL) {
 		dev_err(codec->dev, "%s: Failed to alloc tas2552_priv\n", __func__);
