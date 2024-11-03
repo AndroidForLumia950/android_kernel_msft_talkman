@@ -37,8 +37,11 @@
 
         qcom,cdc-micbias2-headset-only;
         qcom,mbhc-audio-jack-type = "4-pole-jack";
-        asoc-codec = <&tas2552>;  // Change this to reference tas2552 directly
+        asoc-codec = <&tas2552>;
         asoc-codec-names = "ti,tas2552";
+
+        // Reference the MSM8994 sound platform node
+        asoc-platform = <&msm8994_platform>;
     };
 };
 
@@ -68,4 +71,9 @@
         ti,enable-gpio = <&pmi8994_gpios 12 0x00>;  
         interrupts = <0x80>;
     };
+};
+
+// Define the msm8994 platform node here
+&msm8994_platform {
+    compatible = "qcom,msm8994-asoc-platform";
 };
