@@ -24,7 +24,7 @@
 #include <sound/soc.h>
 #include <sound/tlv.h>
 #include <sound/core.h>
-
+#include <linux/of_device.h>
 #include "tas2552.h"
 
 
