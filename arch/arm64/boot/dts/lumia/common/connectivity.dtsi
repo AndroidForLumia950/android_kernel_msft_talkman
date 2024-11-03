@@ -27,7 +27,7 @@
 		status = "okay";
 		qcom,disable-dma;
 		pn548@28 { /* NFC *
-			status = "okay";
+			status = "disabled";
 			compatible = "nxp,pn544";
 			reg = <0x28>;
 			nxp,gpio_ven = <&msm_gpio 30 0x00>;
