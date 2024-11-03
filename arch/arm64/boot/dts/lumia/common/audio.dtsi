@@ -37,8 +37,8 @@
 
         qcom,cdc-micbias2-headset-only;
         qcom,mbhc-audio-jack-type = "4-pole-jack";
-        asoc-codec = <&tas2552>;  // Change this to reference tas2552 directly
-        asoc-codec-names = "ti,tas2552";
+        asoc-codec = <&stub_codec>, <&tas2552>;  // Add tas2552 alongside stub_codec
+        asoc-codec-names = "msm-stub-codec.1", "ti,tas2552";  // Update names accordingly
     };
 };
 
@@ -62,10 +62,11 @@
 
 &i2c_2 {
     status = "okay";
-    tas2552: tas2552@40 {  
-        reg = <0x40>;  
+
+    tas2552: tas2552@40 {
+        reg = <0x40>;
         compatible = "ti,tas2552";
-        ti,enable-gpio = <&pmi8994_gpios 12 0x00>;  
+        ti,enable-gpio = <&pmi8994_gpios 12 0x00>;
         interrupts = <0x80>;
     };
 };
