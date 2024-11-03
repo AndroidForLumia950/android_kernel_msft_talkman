@@ -16,7 +16,6 @@
 #include <linux/i2c.h>
 #include <linux/module.h>
 #include <linux/slab.h>
-#include <linux/of_device.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
 #include <linux/delay.h>
@@ -24,6 +23,7 @@
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
 #include <sound/tlv.h>
+#include <sound/core.h>
 
 #include "tas2552.h"
 
