@@ -429,6 +429,7 @@ error_out:
 
 static void cpufreq_stats_update_policy_cpu(struct cpufreq_policy *policy)
 {
+	unsigned long flags;
 	struct cpufreq_stats *stat = per_cpu(cpufreq_stats_table,
 			policy->last_cpu);
 
