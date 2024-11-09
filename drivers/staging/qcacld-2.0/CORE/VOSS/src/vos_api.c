@@ -76,7 +76,7 @@
 #include "adf_trace.h"
 
 
-
+#include "linux/ktime.h"
 #include "bmi.h"
 #include "ol_fw.h"
 #include "ol_if_athvar.h"
@@ -92,6 +92,10 @@
 #include "wma.h"
 
 #include "vos_utils.h"
+static inline u64 ktime_get_boot_ns(void)
+{
+	return ktime_to_ns(ktime_get_boottime());
+}
 
 /*---------------------------------------------------------------------------
  * Preprocessor Definitions and Constants
