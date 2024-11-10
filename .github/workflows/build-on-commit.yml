@@ -3,7 +3,7 @@ name: Release build
 on:
   push:
     branches:
-      - aarch64-linux-gnu-gcc8.2los18.1perf  # Change to your branch name
+      - twrp  # Change to your branch name
 
 env:
   CROSS_COMPILE_PREFIX: /gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu/bin/aarch64-linux-gnu-
@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          ref: aarch64-linux-gnu-gcc8.2los18.1perf
+          ref: twrp
           fetch-depth: 0
 
       - name: Cache toolchain
