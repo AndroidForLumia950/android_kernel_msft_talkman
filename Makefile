@@ -377,6 +377,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-delete-null-pointer-checks \
 		   -std=gnu89 \
 		   -Wno-error=maybe-uninitialized \
+           -Wno-error=unused-variable \
+           -Wno-error=unused-function \
 		   -mcpu=cortex-a57.cortex-a53 -mtune=cortex-a57.cortex-a53
 
 KBUILD_AFLAGS_KERNEL :=
