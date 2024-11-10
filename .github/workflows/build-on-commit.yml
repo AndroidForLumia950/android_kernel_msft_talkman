@@ -6,7 +6,7 @@ on:
       - twrp  # Change to your branch name
 
 env:
-  CROSS_COMPILE_PREFIX: /gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu/bin/aarch64-linux-gnu-
+  CROSS_COMPILE_PREFIX: /aarch64-linux-android-4.9/bin/aarch64-linux-android-
   IMAGE: /arch/arm64/boot/Image.gz-dtb
   ANYKERNEL3_DIR: /anykernel
 
@@ -17,7 +17,7 @@ jobs:
       VERSION: ${{ github.sha }}  # Use commit SHA as the version
       RELEASE_VERSION: ${{ github.sha }}  # Same for release version
     steps:
-      - name: Checkout repo
+      - name: Checkout kernel repo
         uses: actions/checkout@v4
         with:
           ref: twrp
@@ -27,18 +27,17 @@ jobs:
         id: cache
         uses: actions/cache@v3
         with:
-          path: ./gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu
-          key: ${{ runner.os }}-gcc8.2-${{ hashFiles('**/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz') }}
+          path: ./aarch64-linux-android-4.9
+          key: ${{ runner.os }}-gcc4.9
           restore-keys: |
-            ${{ runner.os }}-gcc8.2-
+            ${{ runner.os }}-gcc4.9-
             
-      - name: Get toolchain
+      - name: Checkout toolchain repo
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        run: wget https://developer.arm.com/-/media/Files/downloads/gnu-a/8.2-2019.01/gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
-
-      - name: Unpack toolchain
-        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        run: tar xf gcc-arm-8.2-2019.01-x86_64-aarch64-linux-gnu.tar.xz
+        uses: actions/checkout@v4
+        with:
+          repository: kindle4jerry/aarch64-linux-android-4.9-bakup
+          path: aarch64-linux-android-4.9
           
       - name: Get current path
         run: echo "DIR=$(pwd)" >> $GITHUB_ENV
