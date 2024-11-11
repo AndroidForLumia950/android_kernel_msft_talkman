@@ -31,6 +31,8 @@
 #include <linux/tick.h>
 #include <linux/kthread.h>
 
+#include "timekeeping_internal.h"
+
 void timecounter_init(struct timecounter *tc,
 		      const struct cyclecounter *cc,
 		      u64 start_tstamp)

@@ -25,7 +25,7 @@
 #include <linux/scatterlist.h>
 #include <linux/ratelimit.h>
 #include <linux/dcache.h>
-#include <linux/namei.h>
+#include <linux/fscrypto.h>
 #include <crypto/aes.h>
 #include "fscrypt_private.h"
 
@@ -44,17 +44,11 @@ static mempool_t *fscrypt_bounce_page_pool = NULL;
 static LIST_HEAD(fscrypt_free_ctxs);
 static DEFINE_SPINLOCK(fscrypt_ctx_lock);
 
-static struct workqueue_struct *fscrypt_read_workqueue;
+struct workqueue_struct *fscrypt_read_workqueue;
 static DEFINE_MUTEX(fscrypt_init_mutex);
 
 static struct kmem_cache *fscrypt_ctx_cachep;
 struct kmem_cache *fscrypt_info_cachep;
-
-void fscrypt_enqueue_decrypt_work(struct work_struct *work)
-{
-	queue_work(fscrypt_read_workqueue, work);
-}
-EXPORT_SYMBOL(fscrypt_enqueue_decrypt_work);
 
 /**
  * fscrypt_release_ctx() - Releases an encryption context
@@ -342,9 +336,6 @@ static int fscrypt_d_revalidate(struct dentry *dentry, unsigned int flags)
 	struct dentry *dir;
 	int dir_has_key, cached_with_key;
 
-	if (flags & LOOKUP_RCU)
-		return -ECHILD;
-
 	dir = dget_parent(dentry);
 	if (!d_inode(dir)->i_sb->s_cop->is_encrypted(d_inode(dir))) {
 		dput(dir);
@@ -455,17 +446,8 @@ fail:
  */
 static int __init fscrypt_init(void)
 {
-	/*
-	 * Use an unbound workqueue to allow bios to be decrypted in parallel
-	 * even when they happen to complete on the same CPU.  This sacrifices
-	 * locality, but it's worthwhile since decryption is CPU-intensive.
-	 *
-	 * Also use a high-priority workqueue to prioritize decryption work,
-	 * which blocks reads from completing, over regular application tasks.
-	 */
 	fscrypt_read_workqueue = alloc_workqueue("fscrypt_read_queue",
-						 WQ_UNBOUND | WQ_HIGHPRI,
-						 num_online_cpus());
+							WQ_HIGHPRI, 0);
 	if (!fscrypt_read_workqueue)
 		goto fail;
 

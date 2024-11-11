@@ -11,10 +11,6 @@
 #include <linux/fscrypt_common.h>
 
 /* crypto.c */
-static inline void fscrypt_enqueue_decrypt_work(struct work_struct *work)
-{
-}
-
 static inline struct fscrypt_ctx *fscrypt_get_ctx(const struct inode *inode,
 						  gfp_t gfp_flags)
 {
@@ -161,13 +157,10 @@ static inline bool fscrypt_match_name(const struct fscrypt_name *fname,
 }
 
 /* bio.c */
-static inline void fscrypt_decrypt_bio(struct bio *bio)
+static inline void fscrypt_decrypt_bio_pages(struct fscrypt_ctx *ctx,
+					     struct bio *bio)
 {
-}
-
-static inline void fscrypt_enqueue_decrypt_bio(struct fscrypt_ctx *ctx,
-					       struct bio *bio)
-{
+	return;
 }
 
 static inline void fscrypt_pullback_bio_page(struct page **page, bool restore)

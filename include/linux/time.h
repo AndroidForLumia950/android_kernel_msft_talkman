@@ -5,6 +5,7 @@
 # include <linux/seqlock.h>
 # include <linux/math64.h>
 #include <uapi/linux/time.h>
+# include <linux/time64.h>
 
 extern struct timezone sys_tz;
 
