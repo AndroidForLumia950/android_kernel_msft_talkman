@@ -3627,6 +3627,7 @@ CONFIG_QCOM_NPA_DUMP=y
 #
 # File systems
 #
+CONFIG_F2FS=y
 CONFIG_DCACHE_WORD_ACCESS=y
 # CONFIG_EXT2_FS is not set
 # CONFIG_EXT3_FS is not set
