@@ -6,7 +6,7 @@
 #include <linux/types.h>
 #include <linux/time.h>
 #include <linux/timex.h>
-#include <asm/param.h>			/* for HZ */
+#include <asm/param.h>                        /* for HZ */
 
 /*
  * The following defines establish the engineering parameters of the PLL
@@ -16,25 +16,25 @@
  * nearest power of two in order to avoid hardware multiply operations.
  */
 #if HZ >= 12 && HZ < 24
-# define SHIFT_HZ	4
+# define SHIFT_HZ        4
 #elif HZ >= 24 && HZ < 48
-# define SHIFT_HZ	5
+# define SHIFT_HZ        5
 #elif HZ >= 48 && HZ < 96
-# define SHIFT_HZ	6
+# define SHIFT_HZ        6
 #elif HZ >= 96 && HZ < 192
-# define SHIFT_HZ	7
+# define SHIFT_HZ        7
 #elif HZ >= 192 && HZ < 384
-# define SHIFT_HZ	8
+# define SHIFT_HZ        8
 #elif HZ >= 384 && HZ < 768
-# define SHIFT_HZ	9
+# define SHIFT_HZ        9
 #elif HZ >= 768 && HZ < 1536
-# define SHIFT_HZ	10
+# define SHIFT_HZ        10
 #elif HZ >= 1536 && HZ < 3072
-# define SHIFT_HZ	11
+# define SHIFT_HZ        11
 #elif HZ >= 3072 && HZ < 6144
-# define SHIFT_HZ	12
+# define SHIFT_HZ        12
 #elif HZ >= 6144 && HZ < 12288
-# define SHIFT_HZ	13
+# define SHIFT_HZ        13
 #else
 # error Invalid value of HZ.
 #endif
@@ -52,7 +52,7 @@
                              + ((((NOM) % (DEN)) << (LSH)) + (DEN) / 2) / (DEN))
 
 /* LATCH is used in the interval timer and ftape setup. */
-#define LATCH ((CLOCK_TICK_RATE + HZ/2) / HZ)	/* For divider */
+#define LATCH ((CLOCK_TICK_RATE + HZ/2) / HZ)        /* For divider */
 
 extern int register_refined_jiffies(long clock_tick_rate);
 
@@ -81,16 +81,16 @@ u64 get_jiffies_64(void);
 #else
 static inline u64 get_jiffies_64(void)
 {
-	return (u64)jiffies;
+        return (u64)jiffies;
 }
 #endif
 
 /*
- *	These inlines deal with timer wrapping correctly. You are 
- *	strongly encouraged to use them
- *	1. Because people otherwise forget
- *	2. Because if the timer wrap changes in future you won't have to
- *	   alter your driver code.
+ *        These inlines deal with timer wrapping correctly. You are 
+ *        strongly encouraged to use them
+ *        1. Because people otherwise forget
+ *        2. Because if the timer wrap changes in future you won't have to
+ *           alter your driver code.
  *
  * time_after(a,b) returns true if the time a is after time b.
  *
@@ -98,46 +98,46 @@ static inline u64 get_jiffies_64(void)
  * good compiler would generate better code (and a really good compiler
  * wouldn't care). Gcc is currently neither.
  */
-#define time_after(a,b)		\
-	(typecheck(unsigned long, a) && \
-	 typecheck(unsigned long, b) && \
-	 ((long)((b) - (a)) < 0))
-#define time_before(a,b)	time_after(b,a)
+#define time_after(a,b)                \
+        (typecheck(unsigned long, a) && \
+         typecheck(unsigned long, b) && \
+         ((long)((b) - (a)) < 0))
+#define time_before(a,b)        time_after(b,a)
 
-#define time_after_eq(a,b)	\
-	(typecheck(unsigned long, a) && \
-	 typecheck(unsigned long, b) && \
-	 ((long)((a) - (b)) >= 0))
-#define time_before_eq(a,b)	time_after_eq(b,a)
+#define time_after_eq(a,b)        \
+        (typecheck(unsigned long, a) && \
+         typecheck(unsigned long, b) && \
+         ((long)((a) - (b)) >= 0))
+#define time_before_eq(a,b)        time_after_eq(b,a)
 
 /*
  * Calculate whether a is in the range of [b, c].
  */
 #define time_in_range(a,b,c) \
-	(time_after_eq(a,b) && \
-	 time_before_eq(a,c))
+        (time_after_eq(a,b) && \
+         time_before_eq(a,c))
 
 /*
  * Calculate whether a is in the range of [b, c).
  */
 #define time_in_range_open(a,b,c) \
-	(time_after_eq(a,b) && \
-	 time_before(a,c))
+        (time_after_eq(a,b) && \
+         time_before(a,c))
 
 /* Same as above, but does so with platform independent 64bit types.
  * These must be used when utilizing jiffies_64 (i.e. return value of
  * get_jiffies_64() */
-#define time_after64(a,b)	\
-	(typecheck(__u64, a) &&	\
-	 typecheck(__u64, b) && \
-	 ((__s64)((b) - (a)) < 0))
-#define time_before64(a,b)	time_after64(b,a)
+#define time_after64(a,b)        \
+        (typecheck(__u64, a) &&        \
+         typecheck(__u64, b) && \
+         ((__s64)((b) - (a)) < 0))
+#define time_before64(a,b)        time_after64(b,a)
 
-#define time_after_eq64(a,b)	\
-	(typecheck(__u64, a) && \
-	 typecheck(__u64, b) && \
-	 ((__s64)((a) - (b)) >= 0))
-#define time_before_eq64(a,b)	time_after_eq64(b,a)
+#define time_after_eq64(a,b)        \
+        (typecheck(__u64, a) && \
+         typecheck(__u64, b) && \
+         ((__s64)((a) - (b)) >= 0))
+#define time_before_eq64(a,b)        time_after_eq64(b,a)
 
 /*
  * These four macros compare jiffies and 'a' for convenience.
@@ -266,10 +266,10 @@ extern unsigned long preset_lpj;
  */
 #if BITS_PER_LONG < 64
 # define MAX_SEC_IN_JIFFIES \
-	(long)((u64)((u64)MAX_JIFFY_OFFSET * TICK_NSEC) / NSEC_PER_SEC)
-#else	/* take care of overflow on 64 bits machines */
+        (long)((u64)((u64)MAX_JIFFY_OFFSET * TICK_NSEC) / NSEC_PER_SEC)
+#else        /* take care of overflow on 64 bits machines */
 # define MAX_SEC_IN_JIFFIES \
-	(SH_DIV((MAX_JIFFY_OFFSET >> SEC_JIFFIE_SC) * TICK_NSEC, NSEC_PER_SEC, 1) - 1)
+        (SH_DIV((MAX_JIFFY_OFFSET >> SEC_JIFFIE_SC) * TICK_NSEC, NSEC_PER_SEC, 1) - 1)
 
 #endif
 
@@ -278,19 +278,25 @@ extern unsigned long preset_lpj;
  */
 extern unsigned int jiffies_to_msecs(const unsigned long j);
 extern unsigned int jiffies_to_usecs(const unsigned long j);
+
+static inline u64 jiffies_to_nsecs(const unsigned long j)
+{
+        return (u64)jiffies_to_usecs(j) * NSEC_PER_USEC;
+}
+
 extern unsigned long msecs_to_jiffies(const unsigned int m);
 extern unsigned long usecs_to_jiffies(const unsigned int u);
 extern unsigned long timespec_to_jiffies(const struct timespec *value);
 extern void jiffies_to_timespec(const unsigned long jiffies,
-				struct timespec *value);
+                                struct timespec *value);
 extern unsigned long timeval_to_jiffies(const struct timeval *value);
 extern void jiffies_to_timeval(const unsigned long jiffies,
-			       struct timeval *value);
+                               struct timeval *value);
 
 extern clock_t jiffies_to_clock_t(unsigned long x);
 static inline clock_t jiffies_delta_to_clock_t(long delta)
 {
-	return jiffies_to_clock_t(max(0L, delta));
+        return jiffies_to_clock_t(max(0L, delta));
 }
 
 extern unsigned long clock_t_to_jiffies(unsigned long x);
@@ -299,6 +305,6 @@ extern u64 nsec_to_clock_t(u64 x);
 extern u64 nsecs_to_jiffies64(u64 n);
 extern unsigned long nsecs_to_jiffies(u64 n);
 
-#define TIMESTAMP_SIZE	30
+#define TIMESTAMP_SIZE        30
 
 #endif
