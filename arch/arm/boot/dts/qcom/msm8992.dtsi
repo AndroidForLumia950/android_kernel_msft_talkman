@@ -90,7 +90,7 @@
 			            40000 //864000 kHZ
 			            50000 //960000 kHZ
 			            76000 //1248000 kHZ
-			            98000>; //1440000 kHZ
+			            90000>; //1440000 kHZ
 			L2_0: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -125,7 +125,7 @@
 			            15000 //864000 kHZ
 			            18000 //960000 kHZ
 			            24000 //1248000 kHZ
-			            38000>; //1440000 kHZ
+			            30000>; //1440000 kHZ
 			L1_I_1: l1-icache {
 				compatible = "arm,arch-cache";
 				qcom,dump-size = <0x9040>;
@@ -154,7 +154,7 @@
 			            15000 //864000 kHZ
 			            18000 //960000 kHZ
 			            29000 //1248000 kHZ
-			            38000>; //1440000 kHZ
+			            30000>; //1440000 kHZ
 			L1_I_2: l1-icache {
 				compatible = "arm,arch-cache";
 				qcom,dump-size = <0x9040>;
@@ -183,7 +183,7 @@
 			            16000 //864000 kHZ
 			            18000 //960000 kHZ
 			            26000 //1248000 kHZ
-			            40000>; //1440000 kHZ
+			            33000>; //1440000 kHZ
 			L1_I_3: l1-icache {
 				compatible = "arm,arch-cache";
 				qcom,dump-size = <0x9040>;
@@ -216,7 +216,7 @@
 			            307000 //1536000 kHZ
 			            343000 //1632000 kHZ
 			            365000 //1689600 kHZ
-			            420000>; //1824000 kHZ
+			            350000>; //1824000 kHZ
 			L2_1: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -255,7 +255,7 @@
 			            220000 //1536000 kHZ
 			            239000 //1632000 kHZ
 			            250000 //1689600 kHZ
-			            310000>; //1824000 kHZ
+			            260000>; //1824000 kHZ
 			L1_I_101: l1-icache {
 				compatible = "arm,arch-cache";
 				qcom,dump-size = <0xd840>;
