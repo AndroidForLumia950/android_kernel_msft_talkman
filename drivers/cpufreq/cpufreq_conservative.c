@@ -27,7 +27,7 @@ static DEFINE_PER_CPU(struct cs_dbs_tuners *, cached_tuners);
 static inline unsigned int get_freq_target(struct cs_dbs_tuners *cs_tuners,
 					   struct cpufreq_policy *policy)
 {
-	unsigned int freq_target = (cs_tuners->freq_step * policy->max) / 125;
+	unsigned int freq_target = (cs_tuners->freq_step * policy->max) / 130;
 
 	/* max freq cannot be less than 100. But who knows... */
 	if (unlikely(freq_target == 0))
