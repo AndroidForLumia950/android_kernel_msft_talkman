@@ -220,6 +220,17 @@ int msm_flash_led_init(struct msm_led_flash_ctrl_t *fctrl)
 		rc = fctrl->flash_i2c_client->i2c_func_tbl->i2c_write_table(
 			fctrl->flash_i2c_client,
 			fctrl->reg_setting->init_setting);
+/* Dummy read to settle standby current for ROHM flash IC driver*/
+#ifdef CONFIG_AS3644
+		if (rc > 0)
+		{
+			uint16_t data;
+			rc = fctrl->flash_i2c_client->i2c_func_tbl->i2c_read(
+				fctrl->flash_i2c_client,
+				0x00,
+				&data, MSM_CAMERA_I2C_BYTE_DATA);
+		}
+#endif
 		if (rc < 0)
 			pr_err("%s:%d failed\n", __func__, __LINE__);
 	}
@@ -306,6 +317,17 @@ int msm_flash_led_off(struct msm_led_flash_ctrl_t *fctrl)
 		rc = fctrl->flash_i2c_client->i2c_func_tbl->i2c_write_table(
 			fctrl->flash_i2c_client,
 			fctrl->reg_setting->off_setting);
+/* Dummy read to settle standby current for ROHM flash IC driver*/
+#ifdef CONFIG_AS3644
+		if (rc > 0)
+		{
+			uint16_t data;
+			rc = fctrl->flash_i2c_client->i2c_func_tbl->i2c_read(
+				fctrl->flash_i2c_client,
+				0x00,
+				&data, MSM_CAMERA_I2C_BYTE_DATA);
+		}
+#endif
 		if (rc < 0)
 			pr_err("%s:%d failed\n", __func__, __LINE__);
 	}
