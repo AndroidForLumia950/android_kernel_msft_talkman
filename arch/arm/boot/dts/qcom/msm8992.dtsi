@@ -82,15 +82,15 @@
 			next-level-cache = <&L2_0>;
 			// The currents(uA) correspond to the frequencies in the
 			// frequency table.
-			current = < 15000 //384000 kHZ
-			            20000 //460800 kHZ
-			            22000 //600000 kHZ
-			            30000 //672000 kHz
-			            32000 //787200 kHZ
-			            40000 //864000 kHZ
-			            50000 //960000 kHZ
-			            76000 //1248000 kHZ
-			            98000>; //1440000 kHZ
+			current = < 18250 //384000 kHZ
+			            24330 //460800 kHZ
+			            26920 //600000 kHZ
+			            34600 //672000 kHz
+			            38150 //787200 kHZ
+			            46880 //864000 kHZ
+			            55940 //960000 kHZ
+			            81740 //1248000 kHZ
+			            105870>; //1440000 kHZ
 			L2_0: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -117,15 +117,15 @@
 			next-level-cache = <&L2_0>;
 			// The currents(uA) correspond to the frequencies in the
 			// frequency table.
-			current = < 5000 //384000 kHZ
-			            7000 //460800 kHZ
-			            8000 //600000 kHZ
-			            11000 //672000 kHz
-			            12000 //787200 kHZ
-			            15000 //864000 kHZ
-			            18000 //960000 kHZ
-			            24000 //1248000 kHZ
-			            38000>; //1440000 kHZ
+            current = < 7665 //384000 kHZ
+			            10219 //460800 kHZ
+			            11306 //600000 kHZ
+			            14532 //672000 kHz
+			            16023 //787200 kHZ
+			            19690 //864000 kHZ
+			            23495 //960000 kHZ
+			            34331 //1248000 kHZ
+			            44465>; //1440000 kHZ
 			L1_I_1: l1-icache {
 				compatible = "arm,arch-cache";
 				qcom,dump-size = <0x9040>;
@@ -146,15 +146,15 @@
 			next-level-cache = <&L2_0>;
 			// The currents(uA) correspond to the frequencies in the
 			// frequency table.
-			current = < 5000 //384000 kHZ
-			            7000 //460800 kHZ
-			            8000 //600000 kHZ
-			            10000 //672000 kHz
-			            12000 //787200 kHZ
-			            15000 //864000 kHZ
-			            18000 //960000 kHZ
-			            29000 //1248000 kHZ
-			            38000>; //1440000 kHZ
+			current = < 7848 //384000 kHZ
+			            10462 //460800 kHZ
+			            11576 //600000 kHZ
+			            14878 //672000 kHz
+			            16405 //787200 kHZ
+			            20158 //864000 kHZ
+			            24054 //960000 kHZ
+			            35148 //1248000 kHZ
+			            45524>; //1440000 kHZ
 			L1_I_2: l1-icache {
 				compatible = "arm,arch-cache";
 				qcom,dump-size = <0x9040>;
@@ -175,15 +175,15 @@
 			next-level-cache = <&L2_0>;
 			// The currents(uA) correspond to the frequencies in the
 			// frequency table.
-			current = < 6000 //384000 kHZ
-			            8000 //460800 kHZ
-			            9000 //600000 kHZ
-			            10500 //672000 kHz
-			            12000 //787200 kHZ
-			            16000 //864000 kHZ
-			            18000 //960000 kHZ
-			            26000 //1248000 kHZ
-			            40000>; //1440000 kHZ
+			current = < 8760 //384000 kHZ
+			            11678 //460800 kHZ
+			            12922 //600000 kHZ
+			            16608 //672000 kHz
+			            18312 //787200 kHZ
+			            22502 //864000 kHZ
+			            26851 //960000 kHZ
+			            39235 //1248000 kHZ
+			            50818>; //1440000 kHZ
 			L1_I_3: l1-icache {
 				compatible = "arm,arch-cache";
 				qcom,dump-size = <0x9040>;
@@ -204,19 +204,19 @@
 			next-level-cache = <&L2_1>;
 			// The currents(uA) correspond to the frequencies in the
 			// frequency table.
-			current = < 55000 //384000 kHZ
-			            77000 //480000 kHZ
-			            97000 //633600 kHZ
-			            125000 //768000 kHZ
+			current = < 67740 //384000 kHZ
+			            82960 //480000 kHZ
+			            105870 //633600 kHZ
+			            133160 //768000 kHZ
 			            150160 //864000 kHZ
 			            167180 //960000 kHZ
 			            230040 //1248000 kHZ
-			            255000 //1344000 kHZ
-			            280000 //1440000 kHZ
-			            307000 //1536000 kHZ
-			            343000 //1632000 kHZ
-			            365000 //1689600 kHZ
-			            420000>; //1824000 kHZ
+			            261430 //1344000 kHZ
+			            290460 //1440000 kHZ
+			            317200 //1536000 kHZ
+			            352870 //1632000 kHZ
+			            374360 //1689600 kHZ
+			            443880>; //1824000 kHZ
 			L2_1: l2-cache {
 			      compatible = "arm,arch-cache";
 			      cache-level = <2>;
@@ -243,19 +243,19 @@
 			next-level-cache = <&L2_1>;
 			// The currents(uA) correspond to the frequencies in the
 			// frequency table.
-			current = < 40000 //384000 kHZ
-			            50000 //480000 kHZ
-			            69000 //633600 kHZ
-			            87000 //768000 kHZ
-			            99000 //864000 kHZ
-			            112000 //960000 kHZ
-			            150000 //1248000 kHZ
-			            179000 //1344000 kHZ
-			            200000 //1440000 kHZ
-			            220000 //1536000 kHZ
-			            239000 //1632000 kHZ
-			            250000 //1689600 kHZ
-			            310000>; //1824000 kHZ
+			current = < 49450 //384000 kHZ
+			            60561 //480000 kHZ
+			            77285 //633600 kHZ
+			            97207 //768000 kHZ
+			            109617 //864000 kHZ
+			            122041 //960000 kHZ
+			            167929 //1248000 kHZ
+			            190844 //1344000 kHZ
+			            212036 //1440000 kHZ
+			            231556 //1536000 kHZ
+			            257595 //1632000 kHZ
+			            273283 //1689600 kHZ
+			            324032>; //1824000 kHZ
 			L1_I_101: l1-icache {
 				compatible = "arm,arch-cache";
 				qcom,dump-size = <0xd840>;
