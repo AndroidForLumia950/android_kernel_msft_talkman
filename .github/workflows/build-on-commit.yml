@@ -3,7 +3,7 @@ name: Release build
 on:
   push:
     branches:
-      - twrp  # Change to your branch name
+      - eas  # Change to your branch name
 
 env:
   CROSS_COMPILE_PREFIX: /aarch64-linux-android-4.9/bin/aarch64-linux-android-
@@ -20,7 +20,7 @@ jobs:
       - name: Checkout kernel repo
         uses: actions/checkout@v4
         with:
-          ref: twrp
+          ref: eas
           fetch-depth: 0
 
       - name: Cache toolchain
