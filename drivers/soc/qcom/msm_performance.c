@@ -25,6 +25,8 @@
 #include <linux/module.h>
 #include <linux/kthread.h>
 
+static int touchboost = 0;
+
 static struct mutex managed_cpus_lock;
 
 /* Maximum number to clusters that this module will manage*/
@@ -139,6 +141,29 @@ static struct task_struct *notify_thread;
 
 /**************************sysfs start********************************/
 
+static int set_touchboost(const char *buf, const struct kernel_param *kp)
+{
+	int val;
+
+	if (sscanf(buf, "%d\n", &val) != 1)
+		return -EINVAL;
+
+	touchboost = val;
+
+	return 0;
+}
+
+static int get_touchboost(char *buf, const struct kernel_param *kp)
+{
+	return snprintf(buf, PAGE_SIZE, "%d", touchboost);
+}
+
+static const struct kernel_param_ops param_ops_touchboost = {
+	.set = set_touchboost,
+	.get = get_touchboost,
+};
+device_param_cb(touchboost, &param_ops_touchboost, NULL, 0644);
+
 static int set_num_clusters(const char *buf, const struct kernel_param *kp)
 {
 	unsigned int val;
@@ -194,7 +219,7 @@ static int set_max_cpus(const char *buf, const struct kernel_param *kp)
 
 		managed_clusters[i]->max_cpu_request = val;
 
-		cp = strnchr(cp, strlen(cp), ':');
+		cp = strchr(cp, ':');
 		cp++;
 		trace_set_max_cpus(cpumask_bits(managed_clusters[i]->cpus)[0],
 								val);
@@ -225,9 +250,7 @@ static const struct kernel_param_ops param_ops_max_cpus = {
 	.get = get_max_cpus,
 };
 
-#ifdef CONFIG_MSM_PERFORMANCE_HOTPLUG_ON
 device_param_cb(max_cpus, &param_ops_max_cpus, NULL, 0644);
-#endif
 
 static int set_managed_cpus(const char *buf, const struct kernel_param *kp)
 {
@@ -310,17 +333,16 @@ static int get_managed_online_cpus(char *buf, const struct kernel_param *kp)
 static const struct kernel_param_ops param_ops_managed_online_cpus = {
 	.get = get_managed_online_cpus,
 };
-
-#ifdef CONFIG_MSM_PERFORMANCE_HOTPLUG_ON
 device_param_cb(managed_online_cpus, &param_ops_managed_online_cpus,
-							NULL, 0444);
-#endif
+								NULL, 0444);
+
 /*
  * Userspace sends cpu#:min_freq_value to vote for min_freq_value as the new
  * scaling_min. To withdraw its vote it needs to enter cpu#:0
  */
 static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 {
+#if 0
 	int i, j, ntokens = 0;
 	unsigned int val, cpu;
 	const char *cp = buf;
@@ -328,6 +350,10 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 	struct cpufreq_policy policy;
 	cpumask_var_t limit_mask;
 	int ret;
+	const char *reset = "0:0 4:0";
+
+	if (touchboost == 0)
+		cp = reset;
 
 	while ((cp = strpbrk(cp + 1, " :")))
 		ntokens++;
@@ -336,7 +362,11 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 	if (!(ntokens % 2))
 		return -EINVAL;
 
-	cp = buf;
+	if (touchboost == 0)
+		cp = reset;
+	else
+		cp = buf;
+
 	cpumask_clear(limit_mask);
 	for (i = 0; i < ntokens; i += 2) {
 		if (sscanf(cp, "%u:%u", &cpu, &val) != 2)
@@ -349,7 +379,7 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 		i_cpu_stats->min = val;
 		cpumask_set_cpu(cpu, limit_mask);
 
-		cp = strnchr(cp, strlen(cp), ' ');
+		cp = strchr(cp, ' ');
 		cp++;
 	}
 
@@ -376,6 +406,7 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 			cpumask_clear_cpu(j, limit_mask);
 	}
 	put_online_cpus();
+#endif
 
 	return 0;
 }
@@ -432,7 +463,7 @@ static int set_cpu_max_freq(const char *buf, const struct kernel_param *kp)
 		i_cpu_stats->max = val;
 		cpumask_set_cpu(cpu, limit_mask);
 
-		cp = strnchr(cp, strlen(cp), ' ');
+		cp = strchr(cp, ' ');
 		cp++;
 	}
 
@@ -1775,7 +1806,6 @@ static void single_mod_exit_timer(unsigned long data)
 	int i;
 	struct cluster *i_cl = NULL;
 	unsigned long flags;
-
 	if (!clusters_inited)
 		return;
 
@@ -1813,12 +1843,15 @@ static int init_cluster_control(void)
 	int ret = 0;
 	struct kobject *module_kobj;
 
-	managed_clusters = kcalloc(num_clusters, sizeof(struct cluster *),
+	managed_clusters = kzalloc(num_clusters * sizeof(struct cluster *),
 								GFP_KERNEL);
-	if (!managed_clusters)
+	if (!managed_clusters) {
+		pr_err("msm_perf: Memory allocation failed\n");
 		return -ENOMEM;
+	}
+
 	for (i = 0; i < num_clusters; i++) {
-		managed_clusters[i] = kcalloc(1, sizeof(struct cluster),
+		managed_clusters[i] = kzalloc(sizeof(struct cluster),
 								GFP_KERNEL);
 		if (!managed_clusters[i]) {
 			pr_err("msm_perf:Cluster %u mem alloc failed\n", i);
