@@ -16,9 +16,8 @@
 
 /* Conservative governor macros */
 #define DEF_FREQUENCY_UP_THRESHOLD		(93)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(80)
-#define DEF_FREQUENCY_STEP			(2)
-#define DEF_HYSTERESIS                (5) // Hysteresis to prevent oscillation
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(90)
+#define DEF_FREQUENCY_STEP			(5)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 
@@ -46,54 +45,63 @@ static inline unsigned int get_freq_target(struct cs_dbs_tuners *cs_tuners,
  * Any frequency increase takes it to the maximum frequency. Frequency reduction
  * happens at minimum steps of 5% (default) of maximum frequency
  */
-// Original code remains unchanged...
-
 static void cs_check_cpu(int cpu, unsigned int load)
 {
-    struct cs_cpu_dbs_info_s *dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
-    struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
-    struct dbs_data *dbs_data = policy->governor_data;
-    struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
+	struct cs_cpu_dbs_info_s *dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
+	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
+	struct dbs_data *dbs_data = policy->governor_data;
+	struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
 
-    // Break out if we cannot reduce the speed
-    if (cs_tuners->freq_step == 0)
-        return;
+	/*
+	 * break out if we 'cannot' reduce the speed as the user might
+	 * want freq_step to be zero
+	 */
+	if (cs_tuners->freq_step == 0)
+		return;
 
-    // Check for frequency increase
-    if (load > cs_tuners->up_threshold) {
-        dbs_info->down_skip = 0;
+	/* Check for frequency increase */
+	if (load > cs_tuners->up_threshold) {
+		dbs_info->down_skip = 0;
 
-        // If we are already at full speed then break out early
-        if (dbs_info->requested_freq >= policy->max)
-            return;
+		/* if we are already at full speed then break out early */
+		if (dbs_info->requested_freq == policy->max)
+			return;
 
-        // Increase frequency gradually
-        dbs_info->requested_freq += DEF_FREQUENCY_STEP;
+		dbs_info->requested_freq += get_freq_target(cs_tuners, policy);
 
-        if (dbs_info->requested_freq > policy->max)
-            dbs_info->requested_freq = policy->max;
+		if (dbs_info->requested_freq > policy->max)
+			dbs_info->requested_freq = policy->max;
 
-        __cpufreq_driver_target(policy, dbs_info->requested_freq, CPUFREQ_RELATION_H);
-        return;
-    }
+		__cpufreq_driver_target(policy, dbs_info->requested_freq,
+			CPUFREQ_RELATION_H);
+		return;
+	}
 
-    // Apply hysteresis for frequency decrease
-    if (load < cs_tuners->down_threshold) {
-        if (dbs_info->requested_freq > policy->min) {
-            unsigned int new_freq = dbs_info->requested_freq - DEF_FREQUENCY_STEP;
-            if (new_freq < policy->min)
-                new_freq = policy->min;
+	/* if sampling_down_factor is active break out early */
+	if (++dbs_info->down_skip < cs_tuners->sampling_down_factor)
+		return;
+	dbs_info->down_skip = 0;
 
-            // Only decrease if the load has been low for a while
-            if (dbs_info->requested_freq > new_freq + DEF_HYSTERESIS) {
-                dbs_info->requested_freq = new_freq;
-                __cpufreq_driver_target(policy, dbs_info->requested_freq, CPUFREQ_RELATION_L);
-            }
-        }
-    }
+	/* Check for frequency decrease */
+	if (load < cs_tuners->down_threshold) {
+		unsigned int freq_target;
+		/*
+		 * if we cannot reduce the frequency anymore, break out early
+		 */
+		if (policy->cur == policy->min)
+			return;
+
+		freq_target = get_freq_target(cs_tuners, policy);
+		if (dbs_info->requested_freq > freq_target)
+			dbs_info->requested_freq -= freq_target;
+		else
+			dbs_info->requested_freq = policy->min;
+
+		__cpufreq_driver_target(policy, dbs_info->requested_freq,
+				CPUFREQ_RELATION_L);
+		return;
+	}
 }
-
-// Other parts of the code remain unchanged...
 
 static void cs_dbs_timer(struct work_struct *work)
 {
