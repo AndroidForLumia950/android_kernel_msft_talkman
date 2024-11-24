@@ -15,8 +15,8 @@
 #include "cpufreq_governor.h"
 
 /* Conservative governor macros */
-#define DEF_FREQUENCY_UP_THRESHOLD		(93)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(90)
+#define DEF_FREQUENCY_UP_THRESHOLD		(80)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(20)
 #define DEF_FREQUENCY_STEP			(5)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
@@ -37,70 +37,74 @@ static inline unsigned int get_freq_target(struct cs_dbs_tuners *cs_tuners,
 }
 
 /*
- * Every sampling_rate, we check, if current idle time is less than 20%
- * (default), then we try to increase frequency. Every sampling_rate *
- * sampling_down_factor, we check, if current idle time is more than 80%
- * (default), then we try to decrease frequency
+ * Every sampling_rate, we check if the current idle time is less than 20%
+ * (default). If so, we gradually increase the frequency by a small step
+ * (default: 50% of the standard frequency increment) to avoid abrupt jumps.
  *
- * Any frequency increase takes it to the maximum frequency. Frequency reduction
- * happens at minimum steps of 5% (default) of maximum frequency
+ * Every sampling_rate * sampling_down_factor, we check if the current idle
+ * time is more than 80% (default). If so, we aggressively decrease the
+ * frequency, dropping by a larger step (default: 200% of the standard frequency
+ * decrement) to conserve energy.
+ *
+ * Frequency increases no longer jump directly to the maximum frequency, but
+ * instead rise incrementally. Frequency reductions happen faster and aim to
+ * quickly bring the CPU frequency down when load decreases significantly.
  */
+
 static void cs_check_cpu(int cpu, unsigned int load)
 {
-	struct cs_cpu_dbs_info_s *dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
-	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
-	struct dbs_data *dbs_data = policy->governor_data;
-	struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
+    struct cs_cpu_dbs_info_s *dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
+    struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
+    struct dbs_data *dbs_data = policy->governor_data;
+    struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
 
-	/*
-	 * break out if we 'cannot' reduce the speed as the user might
-	 * want freq_step to be zero
-	 */
-	if (cs_tuners->freq_step == 0)
-		return;
+    if (cs_tuners->freq_step == 0)
+        return;
 
-	/* Check for frequency increase */
-	if (load > cs_tuners->up_threshold) {
-		dbs_info->down_skip = 0;
+    /* Check for frequency increase */
+    if (load > cs_tuners->up_threshold) {
+        dbs_info->down_skip = 0;
 
-		/* if we are already at full speed then break out early */
-		if (dbs_info->requested_freq == policy->max)
-			return;
+        /* if already at full speed, break early */
+        if (dbs_info->requested_freq == policy->max)
+            return;
 
-		dbs_info->requested_freq += get_freq_target(cs_tuners, policy);
+        /* Gradual increase */
+        dbs_info->requested_freq += (get_freq_target(cs_tuners, policy) / 2); 
 
-		if (dbs_info->requested_freq > policy->max)
-			dbs_info->requested_freq = policy->max;
+        if (dbs_info->requested_freq > policy->max)
+            dbs_info->requested_freq = policy->max;
 
-		__cpufreq_driver_target(policy, dbs_info->requested_freq,
-			CPUFREQ_RELATION_H);
-		return;
-	}
+        __cpufreq_driver_target(policy, dbs_info->requested_freq,
+            CPUFREQ_RELATION_H);
+        return;
+    }
 
-	/* if sampling_down_factor is active break out early */
-	if (++dbs_info->down_skip < cs_tuners->sampling_down_factor)
-		return;
-	dbs_info->down_skip = 0;
+    /* if sampling_down_factor is active, break early */
+    if (++dbs_info->down_skip < cs_tuners->sampling_down_factor)
+        return;
+    dbs_info->down_skip = 0;
 
-	/* Check for frequency decrease */
-	if (load < cs_tuners->down_threshold) {
-		unsigned int freq_target;
-		/*
-		 * if we cannot reduce the frequency anymore, break out early
-		 */
-		if (policy->cur == policy->min)
-			return;
+    /* Check for frequency decrease */
+    if (load < cs_tuners->down_threshold) {
+        unsigned int freq_target;
 
-		freq_target = get_freq_target(cs_tuners, policy);
-		if (dbs_info->requested_freq > freq_target)
-			dbs_info->requested_freq -= freq_target;
-		else
-			dbs_info->requested_freq = policy->min;
+        /* if already at minimum speed, break early */
+        if (policy->cur == policy->min)
+            return;
 
-		__cpufreq_driver_target(policy, dbs_info->requested_freq,
-				CPUFREQ_RELATION_L);
-		return;
-	}
+        freq_target = get_freq_target(cs_tuners, policy);
+
+        /* Aggressive decrease: reduce frequency by 2x freq_target */
+        if (dbs_info->requested_freq > 2 * freq_target)
+            dbs_info->requested_freq -= 2 * freq_target;
+        else
+            dbs_info->requested_freq = policy->min;
+
+        __cpufreq_driver_target(policy, dbs_info->requested_freq,
+            CPUFREQ_RELATION_L);
+        return;
+    }
 }
 
 static void cs_dbs_timer(struct work_struct *work)
