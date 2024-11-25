@@ -72,49 +72,58 @@ static u64 last_input_time;
 
 static int set_input_boost_freq(const char *buf, const struct kernel_param *kp)
 {
-	int i, ntokens = 0;
-	unsigned int val, cpu;
-	const char *cp = buf;
-	bool enabled = false;
+    int i, ntokens = 0;
+    unsigned int val, cpu;
+    const char *cp = buf;
+    bool enabled = false;
 
-	while ((cp = strpbrk(cp + 1, " :")))
-		ntokens++;
+    while ((cp = strpbrk(cp + 1, " :")))
+        ntokens++;
 
-	/* single number: apply to all CPUs */
-	if (!ntokens) {
-		if (sscanf(buf, "%u\n", &val) != 1)
-			return -EINVAL;
-		for_each_possible_cpu(i)
-			per_cpu(sync_info, i).input_boost_freq = val;
-		goto check_enable;
-	}
+    /* single number: apply to all CPUs */
+    if (!ntokens) {
+        if (sscanf(buf, "%u\n", &val) != 1)
+            return -EINVAL;
+        
+        // Lowering the input boost frequency by reducing the value set.
+        if (val > 1000) {
+            val = 1000;  // Set a more moderate frequency value (e.g., 1000 kHz).
+        }
+        for_each_possible_cpu(i)
+            per_cpu(sync_info, i).input_boost_freq = val;
+        goto check_enable;
+    }
 
-	/* CPU:value pair */
-	if (!(ntokens % 2))
-		return -EINVAL;
+    /* CPU:value pair */
+    if (!(ntokens % 2))
+        return -EINVAL;
 
-	cp = buf;
-	for (i = 0; i < ntokens; i += 2) {
-		if (sscanf(cp, "%u:%u", &cpu, &val) != 2)
-			return -EINVAL;
-		if (cpu > num_possible_cpus())
-			return -EINVAL;
+    cp = buf;
+    for (i = 0; i < ntokens; i += 2) {
+        if (sscanf(cp, "%u:%u", &cpu, &val) != 2)
+            return -EINVAL;
+        if (cpu > num_possible_cpus())
+            return -EINVAL;
 
-		per_cpu(sync_info, cpu).input_boost_freq = val;
-		cp = strchr(cp, ' ');
-		cp++;
-	}
+        if (val > 1000) {
+            val = 1000;  // Limit frequency for each CPU if it's too high.
+        }
+
+        per_cpu(sync_info, cpu).input_boost_freq = val;
+        cp = strchr(cp, ' ');
+        cp++;
+    }
 
 check_enable:
-	for_each_possible_cpu(i) {
-		if (per_cpu(sync_info, i).input_boost_freq) {
-			enabled = true;
-			break;
-		}
-	}
-	input_boost_enabled = enabled;
+    for_each_possible_cpu(i) {
+        if (per_cpu(sync_info, i).input_boost_freq) {
+            enabled = true;
+            break;
+        }
+    }
+    input_boost_enabled = enabled;
 
-	return 0;
+    return 0;
 }
 
 static int get_input_boost_freq(char *buf, const struct kernel_param *kp)
