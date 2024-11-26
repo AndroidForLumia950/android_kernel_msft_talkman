@@ -550,7 +550,7 @@
 			reg = <0x2900 0x100>;
 			regulator-name = "pm8994_s8";
 			regulator-min-microvolt = <640000>;
-			regulator-max-microvolt = <1180000>;
+			regulator-max-microvolt = <1030000>;
 			qcom,cpu-num = <0>;
 		};
 
