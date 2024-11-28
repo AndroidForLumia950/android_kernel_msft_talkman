@@ -37,41 +37,44 @@ struct pwm_bl_data {
 
 static int pwm_backlight_update_status(struct backlight_device *bl)
 {
-	struct pwm_bl_data *pb = bl_get_data(bl);
-	int brightness = bl->props.brightness;
-	int max = bl->props.max_brightness;
+    struct pwm_bl_data *pb = bl_get_data(bl);
+    int brightness = bl->props.brightness;
+    int max = bl->props.max_brightness;
 
-	if (bl->props.power != FB_BLANK_UNBLANK ||
-	    bl->props.fb_blank != FB_BLANK_UNBLANK ||
-	    bl->props.state & BL_CORE_FBBLANK)
-		brightness = 0;
+    if (bl->props.power != FB_BLANK_UNBLANK ||
+        bl->props.fb_blank != FB_BLANK_UNBLANK ||
+        bl->props.state & BL_CORE_FBBLANK)
+        brightness = 0;
 
-	if (pb->notify)
-		brightness = pb->notify(pb->dev, brightness);
+    if (pb->notify)
+        brightness = pb->notify(pb->dev, brightness);
 
-	if (brightness == 0) {
-		pwm_config(pb->pwm, 0, pb->period);
-		pwm_disable(pb->pwm);
-	} else {
-		int duty_cycle;
+    if (brightness == 0) {
+        pwm_config(pb->pwm, 0, pb->period);
+        pwm_disable(pb->pwm);
+    } else {
+        int duty_cycle;
 
-		if (pb->levels) {
-			duty_cycle = pb->levels[brightness];
-			max = pb->levels[max];
-		} else {
-			duty_cycle = brightness;
-		}
+        // Ensure brightness is at least 15
+        brightness = max(brightness, 15);
 
-		duty_cycle = pb->lth_brightness +
-		     (duty_cycle * (pb->period - pb->lth_brightness) / max);
-		pwm_config(pb->pwm, duty_cycle, pb->period);
-		pwm_enable(pb->pwm);
-	}
+        if (pb->levels) {
+            duty_cycle = pb->levels[brightness];
+            max = pb->levels[max];
+        } else {
+            duty_cycle = brightness;
+        }
 
-	if (pb->notify_after)
-		pb->notify_after(pb->dev, brightness);
+        duty_cycle = pb->lth_brightness +
+                     (duty_cycle * (pb->period - pb->lth_brightness) / max);
+        pwm_config(pb->pwm, duty_cycle, pb->period);
+        pwm_enable(pb->pwm);
+    }
 
-	return 0;
+    if (pb->notify_after)
+        pb->notify_after(pb->dev, brightness);
+
+    return 0;
 }
 
 static int pwm_backlight_get_brightness(struct backlight_device *bl)
