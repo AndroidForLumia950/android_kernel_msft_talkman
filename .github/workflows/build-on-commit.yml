@@ -39,22 +39,30 @@ jobs:
           repository: kindle4jerry/aarch64-linux-android-4.9-bakup
           path: aarch64-linux-android-4.9
           
-      - name: Install and configure ccache
+    - name: Install and configure ccache
         run: |
           sudo apt-get update
           sudo apt-get install -y ccache
           export CCACHE_DIR=$HOME/.ccache
           export PATH="/usr/lib/ccache:$PATH"
           ccache --max-size=10G
+          echo "Initial ccache stats:"
+          ccache -s
 
-      - name: Cache ccache
-        id: cache-ccache
-        uses: actions/cache@v3
-        with:
-          path: $HOME/.ccache
-          key: ${{ runner.os }}-ccache-${{ github.ref }}
-          restore-keys: |
-            ${{ runner.os }}-ccache-
+- name: Pre-fill ccache
+  run: |
+    echo "Generating initial ccache files..."
+    gcc --version > /dev/null 2>&1
+    ccache -s
+
+- name: Cache ccache
+  id: cache-ccache
+  uses: actions/cache@v3
+  with:
+    path: ~/.ccache  # Hardcoded path for ccache
+    key: ${{ runner.os }}-ccache-${{ github.event.ref_name }}
+    restore-keys: |
+      ${{ runner.os }}-ccache-
 
       - name: Get current path
         run: echo "DIR=$(pwd)" >> $GITHUB_ENV
