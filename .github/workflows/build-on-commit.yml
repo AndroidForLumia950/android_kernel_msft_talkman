@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Cache toolchain
-        id: cache
+        id: cache-toolchain
         uses: actions/cache@v3
         with:
           path: ./aarch64-linux-android-4.9
@@ -33,12 +33,29 @@ jobs:
             ${{ runner.os }}-gcc4.9-
             
       - name: Checkout toolchain repo
-        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        if: ${{ steps.cache-toolchain.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v4
         with:
           repository: kindle4jerry/aarch64-linux-android-4.9-bakup
           path: aarch64-linux-android-4.9
           
+      - name: Install and configure ccache
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ccache
+          export CCACHE_DIR=$HOME/.ccache
+          export PATH="/usr/lib/ccache:$PATH"
+          ccache --max-size=10G
+
+      - name: Cache ccache
+        id: cache-ccache
+        uses: actions/cache@v3
+        with:
+          path: $HOME/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.ref }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
       - name: Get current path
         run: echo "DIR=$(pwd)" >> $GITHUB_ENV
           
@@ -46,7 +63,13 @@ jobs:
         run: make ARCH=arm64 lineageos_bullhead_defconfig
 
       - name: Build kernel
-        run: make ARCH=arm64 CROSS_COMPILE=$DIR${CROSS_COMPILE_PREFIX} -j$(nproc)
+        run: |
+          export CC="ccache gcc"
+          export CXX="ccache g++"
+          make ARCH=arm64 CROSS_COMPILE=$DIR${CROSS_COMPILE_PREFIX} -j$(nproc)
+
+      - name: Show ccache stats
+        run: ccache -s
 
       - name: Copy kernel to release dir
         run: cp $DIR${IMAGE} $DIR${ANYKERNEL3_DIR}
