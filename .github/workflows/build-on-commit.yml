@@ -24,21 +24,21 @@ jobs:
           fetch-depth: 0
 
       - name: Cache toolchain
-        id: cache-toolchain
+        id: toolchain-cache
         uses: actions/cache@v3
         with:
           path: ./aarch64-linux-android-4.9
           key: ${{ runner.os }}-gcc4.9
           restore-keys: |
             ${{ runner.os }}-gcc4.9-
-            
+
       - name: Checkout toolchain repo
-        if: ${{ steps.cache-toolchain.outputs.cache-hit != 'true' }}
+        if: ${{ steps.toolchain-cache.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v4
         with:
           repository: kindle4jerry/aarch64-linux-android-4.9-bakup
           path: aarch64-linux-android-4.9
-          
+
       - name: Install and configure ccache
         run: |
           sudo apt-get update
@@ -46,51 +46,53 @@ jobs:
           export CCACHE_DIR=$HOME/.ccache
           export PATH="/usr/lib/ccache:$PATH"
           ccache --max-size=10G
+          echo "Initial ccache stats:"
+          ccache -s
+
+      - name: Pre-fill ccache
+        run: |
+          echo "Generating initial ccache files..."
+          gcc --version > /dev/null 2>&1
+          ccache -s
 
       - name: Cache ccache
-        id: cache-ccache
+        id: ccache-cache
         uses: actions/cache@v3
         with:
-          path: $HOME/.ccache
-          key: ${{ runner.os }}-ccache-${{ github.ref }}
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.event.ref_name }}
           restore-keys: |
             ${{ runner.os }}-ccache-
 
       - name: Get current path
         run: echo "DIR=$(pwd)" >> $GITHUB_ENV
-          
+
       - name: Build defconfig
         run: make ARCH=arm64 lineageos_bullhead_defconfig
 
       - name: Build kernel
-        run: |
-          export CC="ccache gcc"
-          export CXX="ccache g++"
-          make ARCH=arm64 CROSS_COMPILE=$DIR${CROSS_COMPILE_PREFIX} -j$(nproc)
-
-      - name: Show ccache stats
-        run: ccache -s
+        run: make ARCH=arm64 CROSS_COMPILE=$DIR${CROSS_COMPILE_PREFIX} -j$(nproc)
 
       - name: Copy kernel to release dir
         run: cp $DIR${IMAGE} $DIR${ANYKERNEL3_DIR}
 
       - name: Make name for zip
         run: echo "FINAL_ZIP=Perf-kernel-$(date -u +"%Y%m%d-%H%M").zip" >> $GITHUB_ENV
-        
+
       - name: Zip release
         run: |
           cd ./${ANYKERNEL3_DIR}
           zip -r9 $FINAL_ZIP ./*
-          
+
       - name: Set Git config
         run: |
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
           git config --global user.name "${{ github.actor }}"
-          
+
       - name: Create tag for release
         run: |
           git tag -a "Perf-kernel-$(date -u +"%Y%m%d-%H%M")" -m "Release for kernel build"
-          git push origin "Perf-kernel-$(date -u +"%Y%m%d-%H%M")"  # Push the tag
+          git push origin "Perf-kernel-$(date -u +"%Y%m%d-%H%M")"
 
       - name: Release under current commit
         run: |
