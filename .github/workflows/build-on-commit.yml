@@ -106,4 +106,4 @@ jobs:
           gh release create "Perf-kernel-$(date -u +"%Y%m%d-%H%M")" -F "${CHANGELOG_FILE}" ./${ANYKERNEL3_DIR}/$FINAL_ZIP
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
