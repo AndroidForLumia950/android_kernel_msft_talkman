@@ -104,7 +104,7 @@
  
  &labibb {
 	 status = "ok";
-	 qpnp,qpnp-labibb-mode = "oled";
+	 qpnp,qpnp-labibb-mode = "amoled";
  };
  
  &ibb_regulator {
