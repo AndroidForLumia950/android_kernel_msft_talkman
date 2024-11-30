@@ -34,4 +34,6 @@
 	qcom,platform-te-gpio = <&msm_gpio 10 0>;
 
 	vddio-supply = <&pm8994_s4>;
+	qcom,dsi-panel-bias-vreg;
+	qcom,regulator-ldo-mode;
 };
