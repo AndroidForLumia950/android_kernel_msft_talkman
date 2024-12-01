@@ -491,7 +491,6 @@ static inline int cpufreq_generic_exit(struct cpufreq_policy *policy)
 void acct_update_power(struct task_struct *p, cputime_t cputime);
 
 #ifdef CONFIG_TASK_CPUFREQ_STATS
-void cpufreq_task_stats_init(struct task_struct *p);
 void update_time_in_state(struct task_struct *p, int cpu);
 void update_cumulative_time_in_state(struct task_struct *p,
 				     struct task_struct *parent,
