@@ -1,0 +1,289 @@
+/* Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+ #include "../qcom/msm8994-pinctrl.dtsi"
+ #include "common/pinctrl.dtsi"
+ #include "../qcom/msm8994-camera-sensor-mtp.dtsi"
+ 
+ #include "common/connectivity.dtsi"
+ #include "common/sdhc.dtsi"
+ #include "common/haptics.dtsi"
+ #include "common/touch.dtsi"
+ #include "common/silabs.dtsi"
+ #include "common/sidekeys.dtsi"
+ #include "common/audio.dtsi"
+ #include "common/adc.dtsi"
+ #include "common/charger.dtsi"
+ #include "common/mdss.dtsi"
+ #include "common/hdmi.dtsi"
+ #include "common/reserved-memory.dtsi"
+ 
+ #include "panels/dsi-panel-duke-wqhd-dualdsi-cmd.dtsi"
+ 
+ #include "common/regulator.dtsi"
+ 
+ &i2c_5 {
+	 smb1357-charger@1c {
+		 compatible = "qcom,smb1357-charger";
+		 reg = <0x1c>;
+		 qcom,parallel-charger;
+		 qcom,float-voltage-mv = <4400>;
+		 qcom,recharge-thresh-mv = <100>;
+	 };
+ };
+ 
+ &mdss_mdp {
+	 qcom,mdss-pref-prim-intf = "dsi";
+ };
+ 
+ &mdss_dsi0 {
+	 qcom,dsi-pref-prim-pan = <&dsi_duke_wqhd_dsi0_cmd>;
+ };
+ 
+ &mdss_dsi1 {
+	 qcom,dsi-pref-prim-pan = <&dsi_duke_wqhd_dsi1_cmd>;
+ };
+ 
+ &labibb {
+	 status = "ok";
+	 qpnp,qpnp-labibb-mode = "oled";
+ };
+ 
+ &ibb_regulator {
+	 qcom,qpnp-ibb-discharge-resistor = <32>;
+ };
+ 
+ &pm8994_gpios {
+	 gpio@c200 { /* GPIO 3 */
+		 qcom,mode = <0>;
+		 qcom,pull = <0>;
+		 qcom,vin-sel = <2>;
+		 qcom,src-sel = <0>;
+		 status = "okay";
+	 };
+ 
+	 gpio@c300 { /* GPIO 4 */
+		 qcom,mode = <0>;
+		 qcom,pull = <0>;
+		 qcom,vin-sel = <2>;
+		 qcom,src-sel = <0>;
+		 status = "okay";
+	 };
+ 
+	 gpio@c400 { /* GPIO 5 */
+		 qcom,mode = <0>;
+		 qcom,pull = <0>;
+		 qcom,vin-sel = <2>;
+		 qcom,src-sel = <0>;
+		 status = "okay";
+	 };
+ 
+	 gpio@c600 { /* GPIO 7 */
+		 /* NFC pwr request */
+		 qcom,mode = <0>;                /* QPNP_PIN_MODE_DIG_IN */
+		 qcom,pull = <5>;                /* QPNP_PIN_PULL_NO */
+		 qcom,vin-sel = <2>;             /* QPNP_PIN_VIN2 */
+		 qcom,src-sel = <2>;             /* QPNP_PIN_SEL_FUNC_1 */
+		 qcom,master-en = <1>;
+		 status = "okay";
+	 };
+ 
+	 gpio@c900 { /* GPIO 10 */
+		 /* NFC clk request */
+		 qcom,mode = <0>;                /* QPNP_PIN_MODE_DIG_IN */
+		 qcom,pull = <5>;                /* QPNP_PIN_PULL_NO */
+		 qcom,vin-sel = <2>;             /* QPNP_PIN_VIN2 */
+		 qcom,src-sel = <2>;             /* QPNP_PIN_SEL_FUNC_1 */
+		 qcom,master-en = <1>;
+		 status = "okay";
+	 };
+ 
+	 gpio@c700 { /* GPIO 8 */
+		 qcom,mode = <0>;                /* Digital in */
+		 qcom,pull = <0>;                /* PULL up 30uA */
+		 qcom,output-type = <0>;         /* CMOS logic */
+		 qcom,invert = <0>;              /* Output high */
+		 qcom,vin-sel = <2>;             /* Logical 1 voltage value 1.8v */
+		 qcom,src-sel = <0>;             /* Constant */
+		 qcom,out-strength = <1>;        /* Low drive strength */
+		 qcom,master-en = <1>;           /* Enable GPIO */
+		 status = "okay";
+	 };
+ 
+	 gpio@c800 { /* GPIO 9 */
+		 qcom,mode = <1>;		/* Digital output */
+		 qcom,output-type = <0>;		/* CMOS logic */
+		 qcom,invert = <1>;		/* Output high */
+		 qcom,vin-sel = <0>;		/* VPH_PWR */
+		 qcom,src-sel = <0>;		/* Constant */
+		 qcom,out-strength = <1>;	/* High drive strength */
+		 qcom,master-en = <1>;		/* Enable GPIO */
+		 status = "okay";
+	 };
+ 
+	 gpio@cd00 { /* GPIO 14 */
+		 status = "okay";
+	 };
+ 
+	 gpio@ce00 { /* GPIO 15 */
+		 qcom,mode = <1>;
+		 qcom,output-type = <0>;
+		 qcom,pull = <5>;
+		 qcom,vin-sel = <2>;
+		 qcom,out-strength = <1>;
+		 qcom,src-sel = <2>;
+		 qcom,master-en = <1>;
+		 status = "okay";
+	 };
+ 
+	 gpio@d100 { /* GPIO 18 */
+		 qcom,mode = <1>;		/* Digital output */
+		 qcom,output-type = <0>;		/* CMOS logic */
+		 qcom,invert = <0>;		/* Output low initially */
+		 qcom,vin-sel = <2>;		/* VIN 2 */
+		 qcom,src-sel = <3>;		/* Function 2 */
+		 qcom,out-strength = <2>;	/* Medium */
+		 qcom,master-en = <1>;		/* Enable GPIO */
+		 status = "okay";
+	 };
+ 
+	 gpio@d200 { /* GPIO 19 */
+		 qcom,mode = <1>;         /* Digital output*/
+		 qcom,pull = <4>;         /* Pulldown 10uA */
+		 qcom,vin-sel = <2>;      /* VIN2 */
+		 qcom,src-sel = <0>;      /* GPIO */
+		 qcom,invert = <0>;       /* Invert */
+		 qcom,master-en = <1>;    /* Enable GPIO */
+		 status = "okay";
+	 };
+ };
+ 
+ &pm8994_mpps {
+	 mpp@a100 { /* MPP 2 */
+		 qcom,mode = <1>;		/* Digital output */
+		 qcom,output-type = <0>;		/* CMOS logic */
+		 qcom,vin-sel = <2>;		/* S4 1.8V */
+		 qcom,src-sel = <0>;		/* Constant */
+		 qcom,master-en = <1>;		/* Enable GPIO */
+		 status = "okay";
+	 };
+ 
+	 mpp@a300 { /* MPP 4 */
+		 /* HDMI_5v_vreg regulator enable */
+		 qcom,mode = <1>;		/* Digital output */
+		 qcom,output-type = <0>;		/* CMOS logic */
+		 qcom,vin-sel = <2>;		/* S4 1.8V */
+		 qcom,src-sel = <0>;		/* Constant */
+		 qcom,master-en = <1>;		/* Enable GPIO */
+		 qcom,invert = <0>;
+		 status = "okay";
+	 };
+ };
+ 
+ 
+ &pmi8994_gpios {
+	 gpio@c000 {	/* GPIO 1  Ultrasound PA EN */
+		 qcom,mode = <1>;	/* DIGITAL OUT */
+		 qcom,pull = <5>;	/* No Pull */
+		 qcom,vin-sel = <2>;	/* 1.8 */
+		 qcom,src-sel = <0>;	/* CONSTANT */
+		 qcom,master-en = <1>;	/* ENABLE GPIO */
+		 status = "okay";
+	 };
+ 
+	 gpio@c400 {	/* GPIO 5  OTG SWITCH EN */
+		 qcom,mode = <1>;	/* DIGITAL OUT */
+		 qcom,pull = <5>;	/* No Pull */
+		 qcom,vin-sel = <2>;	/* 1.8 */
+		 qcom,src-sel = <0>;	/* GPIO */
+		 qcom,master-en = <1>;	/* ENABLE GPIO */
+		 status = "okay";
+	 };
+ };
+ 
+ &pmi8994_mpps {
+	 mpp@a300 { /* MPP 4 */
+		 /* WLED FET */
+		 qcom,mode = <1>;	/* DIGITAL OUT */
+		 qcom,vin-sel = <0>;	/* VIN0 */
+		 qcom,master-en = <1>;
+		 status = "okay";
+	 };
+ };
+ 
+ &blsp2_uart2 {
+	 status = "ok";
+ };
+ 
+ &blsp1_uart2 {
+	 status= "ok";
+	  pinctrl-names = "default";
+	  pinctrl-0 = <&uart_console_sleep>;
+ };
+ 
+ &pcie0 {
+	 status = "disabled";
+ };
+ 
+ &usb3 {
+	 status = "ok";
+ };
+ 
+ &hsphy0 {
+	 status = "ok";
+ };
+ 
+ &ssphy0 {
+	 status = "ok";
+ };
+ 
+ &qcom_crypto1fde {
+	 status = "okay";
+ };
+ 
+ &qcom_crypto2fde {
+	 status = "okay";
+ };
+ 
+ &qcom_crypto1pfe {
+	 status = "okay";
+ };
+ 
+ &qcom_crypto2pfe {
+	 status = "okay";
+ };
+ 
+ &qcom_cedev {
+	 status = "okay";
+ };
+ 
+ ///{
+ //	mtp_batterydata: qcom,battery-data {
+ //		qcom,batt-id-range-pct = <15>;
+ //		#include "batterydata-itech-3000mah.dtsi"
+ //	};
+ //};
+ 
+ &cnss {
+	 pinctrl-names = "default";
+	 pinctrl-0 = <&cnss_default &pcie0_clkreq_default>;
+ };
+ 
+ &usb_ehci {
+	 status = "ok";
+	 qcom,usb2-enable-uicc;
+ };
+ 
+ &qusb_phy {
+	 status = "ok";
+ };
+ 

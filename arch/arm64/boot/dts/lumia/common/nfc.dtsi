@@ -1,0 +1,21 @@
+&i2c_6 {
+	status = "okay";
+	
+	pn547@28 {
+		compatible = "nxp,pn547";
+		reg = <0x28>;
+		status = "ok";
+		nxp,gpio_irq = <&msm_gpio 29 0x00>;
+		nxp,gpio_ven = <&msm_gpio 30 0x00>;
+		nxp,gpio_mode = <&msm_gpio 94 0x00>; //firmware pin
+		nxp,i2c-pull-up = <1>;
+		qcom,clk-src = "BBCLK2";
+		interrupt-parent = <&msm_gpio>;
+		interrupts = <29 0>;
+		interrupt-names = "nfc_irq";
+		pinctrl-names = "nfc_active","nfc_suspend";
+		pinctrl-0 = <&nfc_int_active &nfc_disable_active &nfc_mode_active>;
+		pinctrl-1 = <&nfc_int_suspend &nfc_disable_suspend &nfc_mode_suspend>;
+	};
+	
+};	
