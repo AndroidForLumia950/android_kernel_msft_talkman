@@ -98,15 +98,6 @@ static int cpufreq_stats_update(unsigned int cpu)
 	return 0;
 }
 
-void cpufreq_task_stats_init(struct task_struct *p)
-{
-	unsigned long flags;
-	spin_lock_irqsave(&task_time_in_state_lock, flags);
-	p->time_in_state = NULL;
-	spin_unlock_irqrestore(&task_time_in_state_lock, flags);
-	WRITE_ONCE(p->max_states, 0);
-}
-
 static ssize_t show_total_trans(struct cpufreq_policy *policy, char *buf)
 {
 	struct cpufreq_stats *stat = per_cpu(cpufreq_stats_table, policy->cpu);
