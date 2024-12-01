@@ -92,6 +92,8 @@
 
 #include <soc/qcom/watchdog.h>
 
+extern void cpufreq_task_stats_init(struct task_struct *p);
+
 #define DLOG_SIZE 15000
 #define MAX_CTXSW_LATENCY 1000000000
 static DEFINE_PER_CPU(char[DLOG_SIZE], dbuf);
