@@ -578,7 +578,7 @@ int sync_fence_cancel_async(struct sync_fence *fence,
 }
 EXPORT_SYMBOL(sync_fence_cancel_async);
 
-static bool sync_fence_check(struct sync_fence *fence)
+bool sync_fence_check(struct sync_fence *fence)
 {
 	/*
 	 * Make sure that reads to fence->status are ordered with the
