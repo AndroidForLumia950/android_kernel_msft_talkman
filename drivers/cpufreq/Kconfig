@@ -243,8 +243,7 @@ config CPU_FREQ_GOV_CONSERVATIVE
 
 	  If in doubt, say N.
 
-<<<<<<< HEAD
-=======
+
 config CPU_FREQ_GOV_ELECTRON
 	tristate "'electron' cpufreq governor"
 	depends on CPU_FREQ
@@ -342,7 +341,7 @@ config CPU_FREQ_GOV_SCHEDUTIL
 
 	  If in doubt, say N.
 
->>>>>>> 3855fa49fd3c (BACKPORT: cpufreq: schedutil: New governor based on scheduler utilization data)
+
 config CPU_BOOST
 	tristate "Event base short term CPU freq boost"
 	depends on CPU_FREQ
