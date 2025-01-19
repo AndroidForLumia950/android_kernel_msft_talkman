@@ -1,0 +1,7 @@
+Hello there! Well, I tried to undervolt this, got around to suspecting that the max microvolt for rpm and smd related stuff in msm8992-regulator.dtsi was making it not boot, which is NOT the case. The set CPU voltages stop it from booting for some reason, for now. I will probably like to(maybe you too) look into: Our lumia trees and interference from them, the actual code, maybe something missing or modified/changed.
+
+
+This will be continued.
+
+
+--Julian
