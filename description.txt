@@ -1,5 +1,6 @@
 Hello there! Well, I tried to undervolt this, got around to suspecting that the max microvolt for rpm and smd related stuff in msm8992-regulator.dtsi was making it not boot, which is NOT the case. The set CPU voltages stop it from booting for some reason, for now. I will probably like to(maybe you too) look into: Our lumia trees and interference from them, the actual code, maybe something missing or modified/changed.
 
+Source for changes: https://github.com/HiKirill/kernel_xiaomi_msm8992-lineage-15.1/commit/20961c03bc534c8e8cf2558009d186dc9ac4d9d0
 
 This will be continued.
 
