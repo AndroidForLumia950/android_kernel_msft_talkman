@@ -1,0 +1,157 @@
+&soc {
+	pinctrl@fd510000 {
+
+        /* NFC Start */
+		pmx_rd_nfc_int{
+			qcom,pins = <&gp 29>;
+			qcom,pin-func = <0>;
+			qcom,num-grp-pins = <1>;
+			label = "pmx_nfc_int";
+
+			nfc_int_active: active {
+				drive-strength = <6>;
+				bias-disable;
+			};
+
+			nfc_int_suspend: suspend {
+				drive-strength = <6>;
+				bias-disable;
+			};
+		};
+
+		pmx_nfc_reset{
+			qcom,pins = <&gp 30>;
+			qcom,pin-func = <0>;
+			qcom,num-grp-pins = <1>;
+			label = "pmx_nfc_disable";
+
+			nfc_disable_active: active {
+				drive-strength = <6>;
+				bias-disable;
+			};
+
+			nfc_disable_suspend: suspend {
+				drive-strength = <6>;
+				bias-disable;
+			};
+		};
+
+		pmx_nfc_mode{
+			qcom,pins = <&gp 94>;
+			qcom,pin-func = <0>;
+			qcom,num-grp-pins = <1>;
+			label = "pmx_nfc_mode";
+
+			nfc_mode_active: active {
+				drive-strength = <6>;
+				bias-disable;
+			};
+
+			nfc_mode_suspend: suspend {
+				drive-strength = <6>;
+				bias-disable;
+			};
+		};
+        /* NFC End */
+
+		pmx_i2c_7 {
+			qcom,pins = <&gp 43>, <&gp 44>; /* SDA, SCL */
+			qcom,num-grp-pins = <2>;
+			qcom,pin-func = <3>;
+			label = "pmx_i2c_7";
+	
+			i2c_7_active: i2c_7_active {
+				drive-strength = <2>;
+				bias-disable;
+			};
+	
+			i2c_7_sleep: i2c_7_sleep {
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+	
+
+
+		cnss_lpass: cnss_lpass {
+			qcom,pins = <&gp 112>;
+			qcom,num-grp-pins = <1>;
+			qcom,pin-func = <0>;
+			label = "cnss-lpass";
+			/* default state */
+			cnss_lpass_default: cnss_lpass_default {
+				drive-strength = <16>;
+				bias-pull-down;
+			};
+		};
+		
+		spi4_active {
+			/* MOSI, MISO, CLK */
+			qcom,pins = <&gp 53>, <&gp 54>, <&gp 56>;
+			qcom,num-grp-pins = <3>;
+			qcom,pin-func = <1>;
+			label = "spi4-active";
+			/* active state */
+			spi4_default: default {
+				drive-strength = <12>; /* 12 MA */
+				bias-disable = <0>; /* No PULL */
+			};
+		};
+
+		spi4_suspend {
+			/* MOSI, MISO, CLK */
+			qcom,pins = <&gp 53>, <&gp 54>, <&gp 56>;
+			qcom,num-grp-pins = <3>;
+			qcom,pin-func = <0>;
+			label = "spi4-suspend";
+			/* suspended state */
+			spi4_sleep: sleep {
+				drive-strength = <2>; /* 2 MA */
+				bias-pull-down; /* pull down */
+			};
+		};
+
+		spi4_cs2_active {
+			/* CS */
+			qcom,pins = <&gp 55>;
+			qcom,num-grp-pins = <1>;
+			qcom,pin-func = <4>;
+			label = "spi4-cs2-active";
+			spi4_cs2_active: cs2_active {
+				drive-strength = <2>;
+				bias-disable = <0>;
+			};
+		};
+
+		spi4_cs2_suspend {
+			/* CS */
+			qcom,pins = <&gp 55>;
+			qcom,num-grp-pins = <1>;
+			qcom,pin-func = <0>;
+			label = "spi4-cs2-suspend";
+			spi4_cs2_sleep: cs2_sleep {
+				drive-strength = <2>;
+				bias-disable = <0>;
+			};
+		};
+
+		ice40-spi-usb-pins {
+			qcom,pins = <&gp 4>, <&gp 5>, <&gp 95>;
+			qcom,num-grp-pins = <3>;
+			qcom,pin-func = <0>;
+			label = "ice40-spi-usb-pins";
+
+			/* active state */
+			ice40_default: default {
+				drive-strength = <8>;
+				bias-disable;
+			};
+
+			/* sleep state */
+			ice40_sleep: sleep {
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+	};
+};

@@ -345,6 +345,31 @@
 	ranges = <0 0 0 0xffffffff>;
 	compatible = "simple-bus";
 
+
+	firmware {
+		android {
+			compatible = "android,firmware";
+			fstab {
+				compatible = "android,fstab";
+				system {
+					compatible = "android,system";
+					dev = "/dev/block/platform/soc.0/f9824900.sdhci/by-name/system";
+					type = "ext4";
+					mnt_flags = "ro,barrier=1,inode_readahead_blks=8";
+					fsmgr_flags = "wait,verify";
+				};
+				vendor {
+					compatible = "android,vendor";
+					dev = "/dev/block/platform/soc.0/f9824900.sdhci/by-name/vendor";
+					type = "ext4";
+					mnt_flags = "ro,barrier=1,inode_readahead_blks=8";
+					fsmgr_flags = "wait,verify";
+				};
+			};
+		};
+	};
+
+
 	intc: interrupt-controller@f9000000 {
 		compatible = "qcom,msm-qgic2";
 		interrupt-controller;
@@ -1113,7 +1138,7 @@
 		max-clock-frequency-hz = <125000000>, <0>, <1011000>, <0>, <0>, <0>, <0>, <0>;
 	};
 
-	qcom,cnss {
+	cnss: qcom,cnss {
 		compatible = "qcom,cnss";
 		wlan-bootstrap-gpio = <&msm_gpio 111 0>,
 				      <&msm_gpio 112 0>,
